@@ -1,0 +1,32 @@
+.Checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+.Checkbox-block {
+    display: flex;
+}
+.Checkbox-info .Checkbox_circle {
+    fill: var(--color-bg-info);
+}
+.Checkbox-success .Checkbox_circle {
+    fill: var(--color-bg-success);
+}
+.Checkbox-warn .Checkbox_circle {
+    fill: var(--color-bg-warn);
+}
+.Checkbox-error .Checkbox_circle {
+    fill: var(--color-bg-error);
+}
+.Checkbox_icon {
+    display: block;
+    width: 24px;
+    height: auto;
+    cursor: pointer;
+    fill: none;
+}
+.Checkbox_label {
+    display: contents;
+    cursor: pointer;
+}

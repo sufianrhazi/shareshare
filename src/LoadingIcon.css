@@ -1,0 +1,14 @@
+@keyframes LoadingIcon_spin {
+    from {
+        transform: rotate(0turn);
+    }
+    to {
+        transform: rotate(1turn);
+    }
+}
+.LoadingIcon {
+    display: inline-block;
+    width: auto;
+    height: 1em;
+    animation: 3s linear infinite LoadingIcon_spin;
+}

@@ -1,0 +1,30 @@
+.Button {
+    cursor: pointer;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    gap: 8px;
+    background-color: var(--color-bg-info);
+    color: black;
+    border: 1px solid black;
+    box-shadow: 0.5px 0.25px 1px 0 black;
+    filter: grayscale(0);
+    transition: box-shadow 100ms, background-color 100ms, filter 100ms;
+}
+.Button:hover:not(:disabled),.Button:focus:not(:disabled) {
+    box-shadow: 0.5px 0.25px 2px 1px black;
+    outline: none;
+}
+.Button:active {
+    box-shadow: 0 0 0 0 black;
+}
+.Button-primary {
+    background-color: var(--color-bg-primary);
+    color: white;
+}
+.Button:disabled {
+    filter: grayscale(0.75);
+    cursor: default;
+}

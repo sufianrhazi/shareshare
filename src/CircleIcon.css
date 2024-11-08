@@ -1,0 +1,28 @@
+.CircleIcon {
+    display: block;
+    width: 24px;
+    height: auto;
+    fill: none;
+    cursor: default;
+}
+.CircleIcon-info .CircleIcon_circle {
+    fill: var(--color-bg-info);
+}
+.CircleIcon-success .CircleIcon_circle {
+    fill: var(--color-bg-success);
+}
+.CircleIcon-warn .CircleIcon_circle {
+    fill: var(--color-bg-warn);
+}
+.CircleIcon-error .CircleIcon_circle {
+    fill: var(--color-bg-error);
+}
+.CircleIcon_letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    user-select: none;
+}

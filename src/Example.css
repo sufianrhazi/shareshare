@@ -1,0 +1,15 @@
+.Example {
+    display: block;
+    margin: 1em;
+    border: thin black solid;
+}
+.Example_title {
+    background-color: #DDDDDD;
+    color: #000000;
+    font-weight: bold;
+    padding: 0.25em;
+}
+.Example_content {
+    position: relative;
+    overflow: auto;
+}

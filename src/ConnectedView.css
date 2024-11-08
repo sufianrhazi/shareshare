@@ -1,0 +1,19 @@
+.ConnectedView {
+    display: grid;
+    grid-template-areas: "status" "chat" "controls";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    width: 100%;
+    height: 100%;
+}
+.ConnectedView_status {
+    grid-area: status;
+    display: flex;
+    gap: 20px;
+}
+.ConnectedView_messages {
+    grid-area: chat;
+}
+.ConnectedView_controls {
+    grid-area: controls;
+}

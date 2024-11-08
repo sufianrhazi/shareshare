@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "$0")/.."
+# shellcheck disable=SC1091
+source "s/_tools.sh"
+
+OUTPUT=$(git status --porcelain)
+if [ "$OUTPUT" != "" ]; then
+    echo_error "git repo not clean, please commit everything"
+    git status
+    exit 1
+fi
+
+echo_info "Building..."
+s/build
+
+echo_error "Don't know how to deploy!"
+exit 1

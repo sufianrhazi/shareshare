@@ -1,0 +1,7 @@
+/node_modules/
+/out.cjs
+/test-manifest.json
+/examples-manifest.json
+/license-manifest.json
+/prod/dist
+/build-version.json
