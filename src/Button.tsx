@@ -1,21 +1,23 @@
-import Gooey, { dynGet } from '@srhazi/gooey';
+import Gooey, { calc, dynGet } from '@srhazi/gooey';
 import type { Component, Dyn } from '@srhazi/gooey';
 
-import { dynMap } from './dynMap';
+import { classes } from './classes';
 
 import './Button.css';
 
+export type ButtonSize = 'sm' | 'md';
+
 export const Button: Component<
     {
+        size?: Dyn<ButtonSize | undefined>;
         primary?: Dyn<boolean | undefined>;
     } & JSX.IntrinsicElements['button']
-> = ({ class: className, primary, children, ...props }) => (
+> = ({ class: className, primary, size, children, ...props }) => (
     <button
-        class={dynMap(
-            className,
-            (c) =>
-                `Button ${c || ''} ${dynGet(primary) ? 'Button-primary' : ''}`
-        )}
+        class={classes(className, 'Button', {
+            'Button-primary': primary,
+            'Button-sm': calc(() => dynGet(size) === 'sm'),
+        })}
         {...props}
     >
         {children}

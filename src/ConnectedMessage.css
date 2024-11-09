@@ -1,0 +1,23 @@
+.ConnectedMessage {
+    background-color: hsl(var(--user-hue) 40% 97%);
+}
+.ConnectedMessage_ts {
+    opacity: 0;
+    transition: opacity 100ms;
+    cursor: default;
+}
+.ConnectedMessage:hover .ConnectedMessage_ts {
+    opacity: 1;
+}
+.ConnectedMessage-out {
+    --user-hue: 90deg;
+}
+.ConnectedMessage-in {
+    --user-hue: 270deg;
+}
+.ConnectedMessage-info {
+    font-style: italic;
+}
+.ConnectedMessage_name {
+    color: hsl(var(--user-hue) 80% 35%);
+}

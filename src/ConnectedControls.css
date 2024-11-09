@@ -1,2 +1,15 @@
 .ConnectedControls {
+    display: grid;
+    grid-template-areas: "toolbar toolbar" "input send";
+    grid-template-columns: 1fr auto;
+    align-items: center;
+}
+.ConnectedControls_input {
+    grid-area: input;
+}
+.ConnectedControls_toolbar {
+    grid-area: toolbar;
+}
+.ConnectedControls_button {
+    grid-area: send;
 }

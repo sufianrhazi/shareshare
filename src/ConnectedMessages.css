@@ -1,2 +1,31 @@
 .ConnectedMessages {
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+.ConnectedMessages_msg {
+    background-color: hsl(var(--user-hue) 40% 97%);
+}
+.ConnectedMessages_ts {
+    opacity: 0;
+    transition: opacity 100ms;
+    cursor: default;
+}
+.ConnectedMessages_msg:hover .ConnectedMessages_ts {
+    opacity: 1;
+}
+.ConnectedMessages_msg-out {
+    --user-hue: 90deg;
+}
+.ConnectedMessages_msg-in {
+    --user-hue: 270deg;
+}
+.ConnectedMessages_info {
+    font-style: italic;
+}
+.ConnectedMessages_name {
+    color: hsl(var(--user-hue) 80% 35%);
 }

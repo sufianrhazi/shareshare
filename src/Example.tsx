@@ -5,9 +5,10 @@ import './Example.css';
 
 export const Example: Component<{
     title: string;
+    style?: string | undefined;
     children?: JSX.Node | JSX.Node[];
-}> = ({ title, children }) => (
-    <div class="Example">
+}> = ({ title, style, children }) => (
+    <div style={style} class="Example">
         <div class="Example_title">{title}</div>
         <div class="Example_content">{children}</div>
     </div>

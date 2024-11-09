@@ -1,6 +1,3 @@
-import Gooey, { calc, ClassComponent, collection, field } from '@srhazi/gooey';
-import type { Collection, Component, EmptyProps, Field } from '@srhazi/gooey';
-
 import { isEither, isExact, isNumber, isShape, isString } from './shape';
 import type { CheckType } from './shape';
 
@@ -21,6 +18,12 @@ export const isWireDataMessage = isEither(
 
 export type WireDataMessage = CheckType<typeof isWireDataMessage>;
 
+export const isInitialMessage = isShape({
+    type: isExact('chatstart'),
+    sent: isNumber,
+    from: isExact('peer'),
+});
+
 export const isChatRenameMessage = isShape({
     type: isExact('name'),
     sent: isNumber,
@@ -36,6 +39,10 @@ export const isChatMessage = isShape({
     msg: isString,
 });
 
-export const isLocalMessage = isEither(isChatMessage, isChatRenameMessage);
+export const isLocalMessage = isEither(
+    isChatMessage,
+    isChatRenameMessage,
+    isInitialMessage
+);
 
 export type LocalMessage = CheckType<typeof isLocalMessage>;

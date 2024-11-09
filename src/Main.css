@@ -63,6 +63,7 @@ p {
     --color-text-softer: #666666;
 
     --color-bg: #FFFFFF;
+    --color-bg-modal: rgba(0, 0, 0, 0.2);
     --color-bg-info: #DEDEDE;
     --color-bg-info-disabled: rgba(136, 136, 136, 0.8);
     --color-bg-success: #88DE88;

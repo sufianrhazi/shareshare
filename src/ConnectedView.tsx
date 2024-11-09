@@ -1,22 +1,11 @@
 import Gooey, { calc, ClassComponent, collection, field } from '@srhazi/gooey';
 import type { Collection, Component, EmptyProps, Field } from '@srhazi/gooey';
 
-import { Button } from './Button';
 import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMessages } from './ConnectedMessages';
 import { ConnectedStatus } from './ConnectedStatus';
 import type { Peer } from './Peer';
-import { isEither, isExact, isNumber, isShape, isString } from './shape';
-import type { CheckType } from './shape';
-import { Timestamp } from './Timestamp';
-import {
-    isChatMessage,
-    isChatRenameMessage,
-    isLocalMessage,
-    isWireChatMessage,
-    isWireDataMessage,
-    isWireRenameMessage,
-} from './types';
+import { isWireChatMessage, isWireRenameMessage } from './types';
 import type { LocalMessage, WireDataMessage } from './types';
 
 import './ConnectedView.css';
@@ -24,7 +13,13 @@ import './ConnectedView.css';
 export const ConnectedView: Component<{
     peer: Peer;
 }> = ({ peer }, { onMount }) => {
-    const chatMessages = collection<LocalMessage>([]);
+    const chatMessages = collection<LocalMessage>([
+        {
+            type: 'chatstart',
+            from: 'peer',
+            sent: Date.now(),
+        },
+    ]);
 
     const localName = field('You');
     const peerName = field('Friend');
@@ -68,6 +63,7 @@ export const ConnectedView: Component<{
             />
             <ConnectedControls
                 class="ConnectedView_controls"
+                peerName={peerName}
                 onRename={(newName) => {
                     const priorName = localName.get();
                     localName.set(newName);
@@ -101,7 +97,6 @@ export const ConnectedView: Component<{
                     chatMessages.push(localMessage);
                     peer.channel?.send(JSON.stringify(wireMessage));
                 }}
-                chatMessages={chatMessages}
             />
         </div>
     );
