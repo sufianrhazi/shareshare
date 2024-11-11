@@ -12,7 +12,11 @@ npm install
 
 echo version="$(git rev-parse --short HEAD)" | jo > build-version.json
 
+echo_info "Cleaning build"
+rm -rf prod/dist/
+
 echo_info "Building..."
 npm exec -- vite build --config=./vite.prod.config.js
 
-ln -s ./accept.html prod/dist/index.html
+echo_info "Linking..."
+ln -s ./chat.html prod/dist/index.html
