@@ -14,3 +14,5 @@ echo version="$(git rev-parse --short HEAD)" | jo > build-version.json
 
 echo_info "Building..."
 npm exec -- vite build --config=./vite.prod.config.js
+
+ln -s ./accept.html prod/dist/index.html

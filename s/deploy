@@ -15,6 +15,6 @@ echo_info "Building..."
 s/build
 
 echo_info "Deploying..."
-rsync -azvh --delete dist/ abstract.properties:/srv/www/shareshare.abstract.properties
+rsync -azvh --delete prod/dist/ abstract.properties:/srv/www/shareshare.abstract.properties
 
 echo_good "All done!"
