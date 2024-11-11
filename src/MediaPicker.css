@@ -1,0 +1,29 @@
+.MediaPicker {
+    display: grid;
+    grid-template-areas:
+        "media media"
+        "share share"
+        "video audio";
+    grid-template-columns: 1fr 1fr;
+}
+.MediaPicker_share {
+    grid-area: share;
+}
+.MediaPicker_previewUserMedia {
+    grid-area: media;
+    background-color: #dddddd;
+    height: 400px;
+}
+.MediaPicker_previewUserMedia video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.MediaPicker_videoInput {
+    display: flex;
+    flex-direction: column;
+}
+.MediaPicker_audioInput {
+    display: flex;
+    flex-direction: column;
+}

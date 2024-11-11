@@ -14,5 +14,7 @@ fi
 echo_info "Building..."
 s/build
 
-echo_error "Don't know how to deploy!"
-exit 1
+echo_info "Deploying..."
+rsync -azvh --delete dist/ abstract.properties:/srv/www/shareshare.abstract.properties
+
+echo_good "All done!"
