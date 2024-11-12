@@ -1,5 +1,5 @@
-import Gooey, { calc, ClassComponent, collection, field } from '@srhazi/gooey';
-import type { Collection, Component, EmptyProps, Field } from '@srhazi/gooey';
+import Gooey, { calc } from '@srhazi/gooey';
+import type { Component } from '@srhazi/gooey';
 
 import type { Peer } from './Peer';
 
@@ -11,7 +11,11 @@ export const ConnectedStatus: Component<{
 }> = ({ class: className, peer }, { onMount }) => {
     return (
         <div class={`${className} ConnectedStatus`}>
-            Connection: <code>{peer.connectionState}</code>
+            Connection: <code>{peer.connectionState}</code>; Channel:{' '}
+            <code>
+                {calc(() => peer.channel.get()?.readyState.get()) ??
+                    'no channel'}
+            </code>
         </div>
     );
 };

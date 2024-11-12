@@ -1,5 +1,7 @@
 .ConnectedMessages {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
     list-style: none;
     margin: 0;
     padding: 0;

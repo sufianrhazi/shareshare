@@ -1,8 +1,9 @@
-import { collection, field } from '@srhazi/gooey';
-import type { Collection, Field } from '@srhazi/gooey';
+import { field } from '@srhazi/gooey';
+import type { Field } from '@srhazi/gooey';
 
-import { isArray, isExact, isShape, isString } from './shape';
-import { assert, makePromise } from './utils';
+import { isArray, isEither, isExact, isShape, isString } from './shape';
+import type { CheckType } from './shape';
+import { assert, makePromise, wrapError } from './utils';
 
 // Server: create offer
 // Client: accept offer and create answer
@@ -35,6 +36,29 @@ const isNegotiateAnswer = isShape({
     answer: isAnswer,
     candidates: isCandidateList,
 });
+
+const isNormalMessage = isShape({
+    type: isExact('normal'),
+    message: isString,
+});
+
+const isRenegotiateRequest = isShape({
+    type: isExact('renegotiateRequest'),
+    offer: isOffer,
+});
+
+const isRenegotiateResponse = isShape({
+    type: isExact('renegotiateResponse'),
+    answer: isAnswer,
+});
+
+const isChannelSpecialMessage = isEither(
+    isRenegotiateRequest,
+    isRenegotiateResponse
+);
+const isChannelMessage = isEither(isNormalMessage, isChannelSpecialMessage);
+type ChannelMessage = CheckType<typeof isChannelMessage>;
+type ChannelSpecialMessage = CheckType<typeof isChannelSpecialMessage>;
 
 function encodeNegotiateOffer(
     negotiateOffer: RTCSessionDescriptionInit,
@@ -96,16 +120,101 @@ function decodeNegotiateAnswer(encoded: string) {
     return decoded;
 }
 
+type PeerChannelHandler = (
+    ...args:
+        | [error: Error, message: undefined]
+        | [error: undefined, message: string]
+) => void;
+type PeerChannelSpecialHandler = (message: ChannelSpecialMessage) => void;
+
+class PeerChannel {
+    private channel: RTCDataChannel;
+    private handler: PeerChannelHandler;
+    private specialHandler: PeerChannelSpecialHandler;
+    readyState: Field<RTCDataChannelState>;
+
+    constructor(
+        channel: RTCDataChannel,
+        handler: PeerChannelHandler,
+        specialHandler: PeerChannelSpecialHandler
+    ) {
+        this.channel = channel;
+        this.handler = handler;
+        this.specialHandler = specialHandler;
+        this.readyState = field(channel.readyState);
+        this.channel.addEventListener('closing', this.onReadyStateChange);
+        this.channel.addEventListener('open', this.onReadyStateChange);
+        this.channel.addEventListener('close', this.onReadyStateChange);
+        this.channel.addEventListener('message', this.onMessageReceived);
+    }
+
+    onReadyStateChange = () => {
+        this.readyState.set(this.channel.readyState);
+    };
+
+    notifyMessage(
+        ...args:
+            | [error: Error, message: undefined]
+            | [error: undefined, message: ChannelMessage]
+    ) {
+        const [error, message] = args;
+        if (error) {
+            this.handler(error, undefined);
+        } else if (message.type === 'normal') {
+            this.handler(undefined, message.message);
+        }
+        if (!error && message.type !== 'normal') {
+            this.specialHandler(message);
+        }
+    }
+
+    onMessageReceived = (event: MessageEvent) => {
+        if (typeof event.data !== 'string') {
+            this.notifyMessage(new Error('Unexpected message'), undefined);
+        }
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(event.data);
+        } catch (e) {
+            this.notifyMessage(wrapError(e), undefined);
+            return;
+        }
+        if (isChannelMessage(parsed)) {
+            this.notifyMessage(undefined, parsed);
+        } else {
+            this.notifyMessage(new Error('Unexpected message'), undefined);
+        }
+    };
+
+    send(msg: string) {
+        this.channel.send(JSON.stringify({ type: 'normal', message: msg }));
+    }
+
+    sendSpecial(msg: ChannelSpecialMessage) {
+        this.channel.send(JSON.stringify(msg));
+    }
+}
+
+type PeerMessageHandler = (message: string) => void;
+type PeerTrackHandler = (
+    track: MediaStreamTrack,
+    streams: readonly MediaStream[]
+) => void;
+type PeerRenegotiatingState = undefined | 'renegotiate-sent';
+
 export class Peer {
     handler: (toSend: string) => Promise<string>;
-    channel: RTCDataChannel | undefined;
-    onMessageHandler: undefined | ((event: MessageEvent<any>) => void);
+    channel: Field<PeerChannel | undefined>;
+
+    messageHandlers: Set<PeerMessageHandler>;
+    trackHandlers: Set<PeerTrackHandler>;
 
     peerConnection: RTCPeerConnection;
     connectionState: Field<RTCPeerConnectionState>;
     iceConnectionState: Field<RTCIceConnectionState>;
     iceGatheringState: Field<RTCIceGatheringState>;
     signalingState: Field<RTCSignalingState>;
+    private renegotiateState: PeerRenegotiatingState;
 
     iceCandidates: RTCIceCandidate[];
     iceCandidatesPromise: {
@@ -125,13 +234,16 @@ export class Peer {
             iceServers: [{ urls: 'stun:abstract.properties:3478' }],
         }
     ) {
+        this.messageHandlers = new Set();
+        this.trackHandlers = new Set();
         this.handler = handler;
         this.peerConnection = new RTCPeerConnection(options);
-        this.channel = undefined;
+        this.channel = field(undefined);
         this.connectionState = field(this.peerConnection.connectionState);
         this.iceConnectionState = field(this.peerConnection.iceConnectionState);
         this.iceGatheringState = field(this.peerConnection.iceGatheringState);
         this.signalingState = field(this.peerConnection.signalingState);
+        this.renegotiateState = undefined;
 
         this.iceCandidatesPromise = makePromise<RTCIceCandidate[]>();
         this.connectedPromise = makePromise<void>();
@@ -168,15 +280,40 @@ export class Peer {
         });
         this.peerConnection.addEventListener('datachannel', (e) => {
             console.log('client datachannel', e.channel);
-            assert(!this.channel, 'got multiple channels!');
-            this.channel = e.channel;
-            if (this.onMessageHandler) {
-                this.channel.addEventListener('message', this.onMessageHandler);
-            }
+            assert(!this.channel.get(), 'got multiple channels!');
+            const peerChannel = new PeerChannel(
+                e.channel,
+                this.onChannelMessage,
+                this.onChannelSpecialMessage
+            );
+            this.channel.set(peerChannel);
+        });
+        this.peerConnection.addEventListener('track', (e) => {
+            console.log('client track', e.track);
+            this.onChannelTrack(e.track, e.streams);
         });
         this.peerConnection.addEventListener(
             'negotiationneeded',
             async (event) => {
+                const peerChannel = this.channel.get();
+                if (
+                    this.peerConnection.connectionState === 'connected' &&
+                    peerChannel
+                ) {
+                    console.log(
+                        'Attempting renegotiation over existing data channel...'
+                    );
+                    const offer = await this.peerConnection.createOffer();
+                    this.peerConnection.setLocalDescription(
+                        new RTCSessionDescription(offer)
+                    );
+                    peerChannel.sendSpecial({
+                        type: 'renegotiateRequest',
+                        offer: offer as CheckType<typeof isOffer>,
+                    });
+                    this.renegotiateState = 'renegotiate-sent';
+                    return;
+                }
                 console.log('client negotiationneeded');
                 const offer = await this.peerConnection.createOffer();
                 this.peerConnection.setLocalDescription(
@@ -206,24 +343,83 @@ export class Peer {
         return this.connectedPromise.promise;
     }
 
-    onMessage(handler: (event: MessageEvent<any>) => void) {
-        this.channel?.addEventListener('message', handler);
-        this.onMessageHandler = handler;
+    onChannelSpecialMessage: PeerChannelSpecialHandler = async (message) => {
+        if (message.type === 'renegotiateRequest') {
+            console.log('Received renegotiateRequest...');
+            const offer = message.offer;
+            this.peerConnection.setRemoteDescription(
+                new RTCSessionDescription(offer)
+            );
+            const answer = await this.peerConnection.createAnswer();
+            this.peerConnection.setLocalDescription(
+                new RTCSessionDescription(answer)
+            );
+            const peerChannel = this.channel.get();
+            assert(peerChannel, 'Invariant: got message on missing channel');
+            peerChannel.sendSpecial({
+                type: 'renegotiateResponse',
+                answer: answer as CheckType<typeof isAnswer>,
+            });
+        }
+        if (message.type === 'renegotiateResponse') {
+            if (this.renegotiateState === 'renegotiate-sent') {
+                console.log('Received renegotiateResponse...');
+                const answer = message.answer;
+                this.peerConnection.setRemoteDescription(
+                    new RTCSessionDescription(answer)
+                );
+            } else {
+                console.warn('Got unexpected renegotiateResponse');
+            }
+        }
+    };
+
+    onMessage(handler: PeerMessageHandler) {
+        this.messageHandlers.add(handler);
+        return () => {
+            this.messageHandlers.delete(handler);
+        };
+    }
+
+    onTrack(handler: PeerTrackHandler) {
+        this.trackHandlers.add(handler);
+        return () => {
+            this.trackHandlers.delete(handler);
+        };
+    }
+
+    onChannelMessage: PeerChannelHandler = (error, message) => {
+        if (error) {
+            console.error(
+                'Unexpected error received from primary data channel',
+                error
+            );
+            return;
+        }
+        for (const handler of this.messageHandlers) {
+            handler(message);
+        }
+    };
+
+    onChannelTrack: PeerTrackHandler = (track, streams) => {
+        for (const handler of this.trackHandlers) {
+            handler(track, streams);
+        }
+    };
+
+    send(message: string) {
+        const peerChannel = this.channel.get();
+        assert(peerChannel, 'Cannot send without a data channel');
+        peerChannel.send(message);
     }
 
     async start() {
-        this.channel = this.peerConnection.createDataChannel('main');
-        if (this.onMessageHandler) {
-            this.channel.addEventListener('message', this.onMessageHandler);
-        }
-    }
-
-    async addMedia(constraints: MediaStreamConstraints) {
-        const localStream =
-            await navigator.mediaDevices.getUserMedia(constraints);
-        for (const track of localStream.getTracks()) {
-            this.peerConnection.addTrack(track, localStream);
-        }
+        const peerChannel = new PeerChannel(
+            this.peerConnection.createDataChannel('main'),
+            this.onChannelMessage,
+            this.onChannelSpecialMessage
+        );
+        this.channel.set(peerChannel);
     }
 
     async accept(encodedOffer: string) {

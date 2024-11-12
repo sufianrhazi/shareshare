@@ -1,5 +1,5 @@
-import Gooey, { calc, ClassComponent, collection, field } from '@srhazi/gooey';
-import type { Collection, Component, EmptyProps, Field } from '@srhazi/gooey';
+import Gooey, { collection, field } from '@srhazi/gooey';
+import type { Component } from '@srhazi/gooey';
 
 import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMessages } from './ConnectedMessages';
@@ -26,39 +26,52 @@ export const ConnectedView: Component<{
     const localName = field('You');
     const peerName = field('Friend');
     peer.onMessage((message) => {
-        if (typeof message.data === 'string') {
-            let parsed: WireDataMessage;
-            try {
-                parsed = JSON.parse(message.data);
-            } catch (e) {
-                return;
-            }
-            if (isWireRenameMessage(parsed)) {
-                const priorName = peerName.get();
-                peerName.set(parsed.name);
-                chatMessages.push({
-                    type: 'name',
-                    from: 'peer',
-                    sent: parsed.sent,
-                    priorName,
-                    name: parsed.name,
-                });
-            }
-            if (isWireChatMessage(parsed)) {
-                chatMessages.push({
-                    type: 'chat',
-                    from: 'peer',
-                    sent: parsed.sent,
-                    msg: parsed.msg,
-                });
-            }
+        let parsed: WireDataMessage;
+        try {
+            parsed = JSON.parse(message);
+        } catch (e) {
+            console.warn('Got malformed message', e);
+            return;
+        }
+        if (isWireRenameMessage(parsed)) {
+            const priorName = peerName.get();
+            peerName.set(parsed.name);
+            chatMessages.push({
+                type: 'name',
+                from: 'peer',
+                sent: parsed.sent,
+                priorName,
+                name: parsed.name,
+            });
+        }
+        if (isWireChatMessage(parsed)) {
+            chatMessages.push({
+                type: 'chat',
+                from: 'peer',
+                sent: parsed.sent,
+                msg: parsed.msg,
+            });
+        }
+    });
+    const sharedElements = collection<JSX.Node>([]);
+    peer.onTrack((track, streams) => {
+        if (track.kind === 'video') {
+            const video = document.createElement('video');
+            video.srcObject = streams[0];
+            sharedElements.push(video);
+            video.play();
+        } else if (track.kind === 'audio') {
+            const audio = document.createElement('audio');
+            audio.srcObject = streams[0];
+            sharedElements.push(audio);
+            audio.play();
         }
     });
 
-    onMount(() => {});
     return (
         <div class="ConnectedView">
             <ConnectedStatus class="ConnectedView_status" peer={peer} />
+            <div class="ConnectedView_media">{sharedElements}</div>
             <ConnectedMessages
                 class="ConnectedView_messages"
                 localName={localName}
@@ -85,7 +98,7 @@ export const ConnectedView: Component<{
                         name: newName,
                     };
                     chatMessages.push(localMessage);
-                    peer.channel?.send(JSON.stringify(wireMessage));
+                    peer.send(JSON.stringify(wireMessage));
                 }}
                 onShareUserMedia={(mediaStream) => {
                     if (mediaStream) {
@@ -108,7 +121,7 @@ export const ConnectedView: Component<{
                         msg,
                     };
                     chatMessages.push(localMessage);
-                    peer.channel?.send(JSON.stringify(wireMessage));
+                    peer.send(JSON.stringify(wireMessage));
                 }}
             />
         </div>

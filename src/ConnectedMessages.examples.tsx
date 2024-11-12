@@ -32,7 +32,7 @@ mount(
                 ])}
             />
         </Example>
-        <Example title="First message (sent)">
+        <Example style="height: 100px" title="First message (sent)">
             <ConnectedMessages
                 localName={localName}
                 peerName={peerName}

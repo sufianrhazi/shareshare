@@ -839,6 +839,16 @@ export const ChatApp: Component = () => {
                             </>
                         )
                 )}
+                <pre>
+                    Peer.connectionState:{peer.connectionState};
+                    Peer.iceConnectionState:{peer.iceConnectionState};
+                    Peer.signalingState:{peer.signalingState}
+                    Peer.channel.readyState:
+                    {calc(
+                        () =>
+                            peer.channel.get()?.readyState.get() ?? 'no channel'
+                    )}
+                </pre>
             </div>
         </div>
     );

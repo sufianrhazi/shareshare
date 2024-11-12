@@ -27,8 +27,7 @@ export function classes(
                     // TODO(gooey): this is gross, need a way to check if a value is a Dyn
                     classNames.push(read);
                 }
-            }
-            if (name) {
+            } else if (name) {
                 for (const [key, val] of Object.entries(name)) {
                     if (dynGet(val)) {
                         classNames.push(key);

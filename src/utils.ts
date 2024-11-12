@@ -27,3 +27,10 @@ export function makePromise<T>() {
 }
 
 export type PromiseHandle<T> = ReturnType<typeof makePromise<T>>;
+
+export function wrapError(e: any, msg?: string): Error {
+    if (e instanceof Error) {
+        return e;
+    }
+    return new Error(msg ?? 'Unknown error', { cause: e });
+}
