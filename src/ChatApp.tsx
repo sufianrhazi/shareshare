@@ -96,7 +96,10 @@ function transition(
             }
             break;
         case 'receive_and_accept_response':
-            if (state.type === 'invite_sent') {
+            if (
+                state.type === 'invite_created' ||
+                state.type === 'invite_sent'
+            ) {
                 return {
                     type: 'response_accepted',
                     inviteMessage: state.inviteMessage,
