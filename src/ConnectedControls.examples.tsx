@@ -18,6 +18,13 @@ mount(
                 onRename={(newName) => {
                     events.push(`rename: ${newName}`);
                 }}
+                onShareUserMedia={(mediaStream) => {
+                    if (mediaStream) {
+                        events.push(`Shared media: ${mediaStream.id}`);
+                    } else {
+                        events.push(`Stopped sharing media`);
+                    }
+                }}
                 onSendMessage={(message) => {
                     events.push(`message: ${message}`);
                 }}

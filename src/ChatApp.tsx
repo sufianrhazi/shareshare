@@ -199,17 +199,6 @@ function getInitialState(): StateMachineState {
             type: 'start_guest',
             inviteMessage: hash,
         };
-        /*
-         * TODO: actually accept the hash
-        peer.accept(hash).then(
-            () => {
-                console.log('Accept succeeded!');
-            },
-            (err) => {
-                console.log('Accept failed!', err);
-            }
-        );
-        */
     }
     return { type: 'start_host' };
 }
@@ -564,6 +553,22 @@ export const ChatApp: Component = () => {
                                     >
                                         Copy invitation
                                     </CopyButton>
+                                    <input
+                                        on:copy={() => {
+                                            transition(state, {
+                                                event: 'copy_invitation',
+                                            });
+                                        }}
+                                        ref={(el) => {
+                                            if (el) {
+                                                el?.focus();
+                                                el?.select();
+                                            }
+                                        }}
+                                        type="text"
+                                        readonly
+                                        value={url}
+                                    />
                                 </p>
                             );
                         }

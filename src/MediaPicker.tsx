@@ -13,7 +13,6 @@ const isSharingUserMedia = field(false);
 const isSharingDisplay = field(false);
 
 const activeDisplay = field<null | MediaStream>(null);
-const activeUserMedia = field<null | MediaStream>(null);
 const userMediaDevices = collection<MediaDeviceInfo>([]);
 
 const isSharingUserVideo = field(true);
@@ -74,37 +73,107 @@ const updateDevices = async () => {
     });
 };
 
-export const MediaPicker: Component = (props, { onMount }) => {
+export const MediaPicker: Component<{
+    setUserMedia: (mediaStream: MediaStream | undefined) => void;
+}> = ({ setUserMedia }, { onMount, onUnmount }) => {
     const id = newId();
+
+    const previewUserMedia = field<undefined | MediaStream>(undefined);
 
     const videoRef = ref<HTMLVideoElement>();
     const audioRef = ref<HTMLAudioElement>();
     const gainValue = field(0);
 
-    onMount(() => {
-        /*
-        const updateDisplays = () => {
-            navigator.mediaDevices
-                .getDisplayMedia({
-                    video: true,
-                    audio: true,
-                })
-                .then((display) => {
-                    activeDisplay.set(display);
-                });
-        };
-        */
+    let onFrameHandle: number | undefined;
+    const audioContext = new AudioContext();
+    let mediaStreamAudioSourceNode: AudioNode | undefined;
+    let analyserNode: AnalyserNode | undefined;
 
+    const updatePreview = (mediaStream: MediaStream | undefined) => {
+        if (mediaStream) {
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+                videoRef.current.play();
+            }
+            if (audioRef.current) {
+                audioRef.current.srcObject = mediaStream;
+                audioRef.current.play();
+            }
+            if (mediaStream.getAudioTracks().length > 0) {
+                mediaStreamAudioSourceNode =
+                    audioContext.createMediaStreamSource(mediaStream);
+                analyserNode = audioContext.createAnalyser();
+                mediaStreamAudioSourceNode.connect(analyserNode);
+
+                const pcmData = new Float32Array(analyserNode.fftSize);
+                const onFrame = () => {
+                    if (!analyserNode) {
+                        return;
+                    }
+                    analyserNode.getFloatTimeDomainData(pcmData);
+                    let sumSquares = 0.0;
+                    for (const amplitude of pcmData) {
+                        sumSquares += amplitude * amplitude;
+                    }
+                    gainValue.set(Math.sqrt(sumSquares / pcmData.length));
+                    onFrameHandle = window.requestAnimationFrame(onFrame);
+                };
+                onFrameHandle = window.requestAnimationFrame(onFrame);
+            }
+        } else {
+            if (onFrameHandle !== undefined) {
+                window.cancelAnimationFrame(onFrameHandle);
+                onFrameHandle = undefined;
+            }
+            if (mediaStreamAudioSourceNode) {
+                mediaStreamAudioSourceNode.disconnect();
+                mediaStreamAudioSourceNode = undefined;
+            }
+            if (analyserNode) {
+                analyserNode.disconnect();
+                analyserNode = undefined;
+            }
+            if (videoRef.current) {
+                videoRef.current.pause();
+                videoRef.current.srcObject = null;
+            }
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.srcObject = null;
+            }
+        }
+    };
+
+    const setPreview = (mediaStream: MediaStream | undefined) => {
+        const prevMediaStream = previewUserMedia.get();
+        if (prevMediaStream) {
+            updatePreview(undefined);
+            for (const track of prevMediaStream.getTracks()) {
+                track.stop();
+            }
+        }
+        setUserMedia(mediaStream);
+        previewUserMedia.set(mediaStream);
+        updatePreview(mediaStream);
+    };
+
+    onUnmount(() => {
+        updatePreview(undefined);
+        audioContext.close();
+    });
+    onMount(() => {
         const unsubscribeUserMedia = calc2({
             cleanup: (result) => result(),
             fn: () => {
                 let cancelled = false;
                 let listening = false;
-                let onFrameHandle: number | undefined;
                 const sharingUserMedia = isSharingUserMedia.get();
                 const sharingUserVideo = isSharingUserVideo.get();
                 const sharingUserAudio = isSharingUserAudio.get();
-                if (sharingUserMedia) {
+                if (
+                    sharingUserMedia &&
+                    (sharingUserVideo || sharingUserAudio)
+                ) {
                     navigator.mediaDevices
                         .getUserMedia({
                             video: sharingUserVideo
@@ -148,50 +217,18 @@ export const MediaPicker: Component = (props, { onMount }) => {
                             if (cancelled) {
                                 return;
                             }
-                            activeUserMedia.set(media);
-                            const audioContext = new AudioContext();
-                            const mediaStreamAudioSourceNode: AudioNode =
-                                audioContext.createMediaStreamSource(media);
-                            const analyserNode = audioContext.createAnalyser();
-                            mediaStreamAudioSourceNode.connect(analyserNode);
-
-                            const pcmData = new Float32Array(
-                                analyserNode.fftSize
-                            );
-                            const onFrame = () => {
-                                analyserNode.getFloatTimeDomainData(pcmData);
-                                let sumSquares = 0.0;
-                                for (const amplitude of pcmData) {
-                                    sumSquares += amplitude * amplitude;
-                                }
-                                gainValue.set(
-                                    Math.sqrt(sumSquares / pcmData.length)
+                            setPreview(media);
+                            if (!listening) {
+                                navigator.mediaDevices.addEventListener(
+                                    'devicechange',
+                                    updateDevices
                                 );
-                                onFrameHandle =
-                                    window.requestAnimationFrame(onFrame);
-                            };
-                            onFrameHandle =
-                                window.requestAnimationFrame(onFrame);
-                            if (videoRef.current) {
-                                videoRef.current.srcObject = media;
-                                videoRef.current.play();
+                                listening = true;
                             }
-                            if (audioRef.current) {
-                                audioRef.current.srcObject = media;
-                                audioRef.current.play();
-                            }
-                            navigator.mediaDevices.addEventListener(
-                                'devicechange',
-                                updateDevices
-                            );
-                            listening = true;
                             return updateDevices();
                         });
                     return () => {
                         cancelled = true;
-                        if (onFrameHandle) {
-                            window.cancelAnimationFrame(onFrameHandle);
-                        }
                         if (listening) {
                             navigator.mediaDevices.removeEventListener(
                                 'devicechange',
@@ -201,32 +238,12 @@ export const MediaPicker: Component = (props, { onMount }) => {
                         }
                     };
                 } else {
-                    activeUserMedia.set(null);
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = null;
-                        videoRef.current.pause();
-                    }
-                    if (audioRef.current) {
-                        audioRef.current.srcObject = null;
-                        audioRef.current.pause();
-                    }
+                    setPreview(undefined);
                     return () => {};
                 }
             },
         });
-        /*
-        const unsubscribeDisplay = isSharingDisplay.subscribe(
-            (err, sharingDisplay) => {
-                if (sharingDisplay) {
-                    updateDisplays();
-                }
-            }
-        );
-        */
         return () => {
-            /*
-            unsubscribeDisplay();
-            */
             unsubscribeUserMedia();
         };
     });
@@ -236,7 +253,12 @@ export const MediaPicker: Component = (props, { onMount }) => {
             <div class="MediaPicker_previewUserMedia">
                 <video class="MediaPicker_previewUserVideo" ref={videoRef} />
                 <audio class="MediaPicker_previewUserAudio" ref={audioRef} />
-                <meter value={gainValue} min={0} max={1} />
+                <meter
+                    class="MediaPicker_previewUserAudioGain"
+                    value={gainValue}
+                    min={0}
+                    max={1}
+                />
             </div>
             <div class="MediaPicker_share">
                 <label>
@@ -270,7 +292,7 @@ export const MediaPicker: Component = (props, { onMount }) => {
                                             }
                                         }}
                                     />{' '}
-                                    Do not share video
+                                    No video
                                 </label>
                                 {userMediaDevices.mapView((userMediaDevice) => {
                                     if (userMediaDevice.kind !== 'videoinput')
@@ -284,8 +306,15 @@ export const MediaPicker: Component = (props, { onMount }) => {
                                                 checked={calc(
                                                     () =>
                                                         isSharingUserVideo.get() &&
-                                                        userMediaDevice.deviceId ===
-                                                            videoInputPreferences.deviceId
+                                                        previewUserMedia
+                                                            .get()
+                                                            ?.getVideoTracks()
+                                                            .some(
+                                                                (track) =>
+                                                                    track.getCapabilities()
+                                                                        .deviceId ===
+                                                                    userMediaDevice.deviceId
+                                                            )
                                                 )}
                                                 on:input={(e, el) => {
                                                     if (el.checked) {
@@ -320,7 +349,7 @@ export const MediaPicker: Component = (props, { onMount }) => {
                                             }
                                         }}
                                     />{' '}
-                                    Do not share video
+                                    No audio
                                 </label>
                                 {userMediaDevices.mapView((userMediaDevice) => {
                                     if (userMediaDevice.kind !== 'audioinput')
@@ -334,8 +363,15 @@ export const MediaPicker: Component = (props, { onMount }) => {
                                                 checked={calc(
                                                     () =>
                                                         isSharingUserAudio.get() &&
-                                                        userMediaDevice.deviceId ===
-                                                            audioInputPreferences.deviceId
+                                                        previewUserMedia
+                                                            .get()
+                                                            ?.getAudioTracks()
+                                                            .some(
+                                                                (track) =>
+                                                                    track.getCapabilities()
+                                                                        .deviceId ===
+                                                                    userMediaDevice.deviceId
+                                                            )
                                                 )}
                                                 on:input={(e, el) => {
                                                     if (el.checked) {
@@ -352,83 +388,6 @@ export const MediaPicker: Component = (props, { onMount }) => {
                                     );
                                 })}
                             </div>
-                            {calc(() => {
-                                const userMedia = activeUserMedia.get();
-                                if (!userMedia) {
-                                    return null;
-                                }
-                                return userMedia.getTracks().map((track) => {
-                                    const capabilities =
-                                        track.getCapabilities();
-                                    const capabilityInputs: JSX.Node[] = [];
-                                    if (
-                                        capabilities.aspectRatio &&
-                                        capabilities.aspectRatio.max !==
-                                            undefined &&
-                                        capabilities.aspectRatio.min !==
-                                            undefined
-                                    ) {
-                                        capabilityInputs.push(
-                                            <label>
-                                                Aspect ratio:{' '}
-                                                <input
-                                                    type="range"
-                                                    min={
-                                                        capabilities.aspectRatio
-                                                            .min
-                                                    }
-                                                    max={
-                                                        capabilities.aspectRatio
-                                                            .max
-                                                    }
-                                                />
-                                            </label>
-                                        );
-                                    }
-                                    if (
-                                        capabilities.autoGainControl &&
-                                        capabilities.autoGainControl.length > 1
-                                    ) {
-                                        capabilityInputs.push(
-                                            <label>
-                                                <input type="checkbox" /> Auto
-                                                Gain Control
-                                            </label>
-                                        );
-                                    }
-                                    if (capabilities.facingMode) {
-                                        capabilityInputs.push(
-                                            <label>
-                                                Facing mode:{' '}
-                                                <select>
-                                                    {capabilities.facingMode.map(
-                                                        (facingMode) => (
-                                                            <option
-                                                                value={
-                                                                    facingMode
-                                                                }
-                                                            >
-                                                                {facingMode}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </select>
-                                            </label>
-                                        );
-                                    }
-                                    return (
-                                        <>
-                                            <p>
-                                                <b>
-                                                    Device: {track.label} (
-                                                    {track.kind})
-                                                </b>
-                                            </p>
-                                            {capabilityInputs}
-                                        </>
-                                    );
-                                });
-                            })}
                         </>
                     )
             )}

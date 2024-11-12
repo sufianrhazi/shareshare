@@ -4,6 +4,7 @@ import type { Component, Dyn } from '@srhazi/gooey';
 import { Button } from './Button';
 import { Buttons } from './Buttons';
 import { classes } from './classes';
+import { MediaPicker } from './MediaPicker';
 import { mkid } from './mkid';
 import { Modal } from './Modal';
 
@@ -16,12 +17,22 @@ export const ConnectedControls: Component<{
     localName: Dyn<string>;
     peerName: Dyn<string>;
     onRename: (name: string) => void;
+    onShareUserMedia: (media: MediaStream | undefined) => void;
     onSendMessage: (msg: string) => void;
 }> = (
-    { class: className, localName, peerName, onRename, onSendMessage },
+    {
+        class: className,
+        localName,
+        peerName,
+        onShareUserMedia,
+        onRename,
+        onSendMessage,
+    },
     { onMount }
 ) => {
     const renameDialogOpen = field(false);
+    const shareDialogOpen = field(false);
+    const sharedUserMedia = field<undefined | MediaStream>(undefined);
     const id = nextId();
     const toSend = field('');
     const send = () => {
@@ -79,14 +90,44 @@ export const ConnectedControls: Component<{
                     </label>
                 </p>
             </Modal>
+            <Modal
+                title="Share"
+                open={shareDialogOpen}
+                onSave={(formData) => {
+                    onShareUserMedia(sharedUserMedia.get());
+                }}
+                onCancel={() => {
+                    onShareUserMedia(undefined);
+                }}
+            >
+                {calc(
+                    () =>
+                        shareDialogOpen.get() && (
+                            <MediaPicker
+                                setUserMedia={(userMedia) => {
+                                    sharedUserMedia.set(userMedia);
+                                }}
+                            />
+                        )
+                )}
+            </Modal>
             <Buttons class="ConnectedControls_toolbar">
                 <Button on:click={() => renameDialogOpen.set(true)} size="sm">
                     Change name...
                 </Button>
-                <Button size="sm">Send file...</Button>
-                <Button size="sm">Start video...</Button>
-                <Button size="sm">Start audio...</Button>
-                <Button size="sm">Share screen...</Button>
+                <Button on:click={() => shareDialogOpen.set(true)} size="sm">
+                    Share...
+                </Button>
+                <Button
+                    disabled={calc(() => !sharedUserMedia.get())}
+                    on:click={() => {
+                        sharedUserMedia.set(undefined);
+                        onShareUserMedia(undefined);
+                    }}
+                    size="sm"
+                >
+                    Stop sharing
+                </Button>
             </Buttons>
         </div>
     );

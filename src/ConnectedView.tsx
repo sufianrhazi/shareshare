@@ -21,6 +21,8 @@ export const ConnectedView: Component<{
         },
     ]);
 
+    const userMediaStream = field<MediaStream | undefined>(undefined);
+
     const localName = field('You');
     const peerName = field('Friend');
     peer.onMessage((message) => {
@@ -52,6 +54,8 @@ export const ConnectedView: Component<{
             }
         }
     });
+
+    onMount(() => {});
     return (
         <div class="ConnectedView">
             <ConnectedStatus class="ConnectedView_status" peer={peer} />
@@ -63,6 +67,7 @@ export const ConnectedView: Component<{
             />
             <ConnectedControls
                 class="ConnectedView_controls"
+                localName={localName}
                 peerName={peerName}
                 onRename={(newName) => {
                     const priorName = localName.get();
@@ -81,6 +86,14 @@ export const ConnectedView: Component<{
                     };
                     chatMessages.push(localMessage);
                     peer.channel?.send(JSON.stringify(wireMessage));
+                }}
+                onShareUserMedia={(mediaStream) => {
+                    if (mediaStream) {
+                        for (const track of mediaStream.getTracks()) {
+                            peer.peerConnection.addTrack(track, mediaStream);
+                        }
+                        userMediaStream.set(mediaStream);
+                    }
                 }}
                 onSendMessage={(msg) => {
                     const localMessage: LocalMessage = {
