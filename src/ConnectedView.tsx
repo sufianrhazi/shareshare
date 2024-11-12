@@ -58,10 +58,18 @@ export const ConnectedView: Component<{
         if (track.kind === 'video') {
             const video = document.createElement('video');
             video.srcObject = streams[0];
+            video.setAttribute(
+                'controlslist',
+                'nodownload nofullscreen noremoteplayback'
+            );
             sharedElements.push(video);
             video.play();
         } else if (track.kind === 'audio') {
             const audio = document.createElement('audio');
+            audio.setAttribute(
+                'controlslist',
+                'nodownload nofullscreen noremoteplayback'
+            );
             audio.srcObject = streams[0];
             sharedElements.push(audio);
             audio.play();

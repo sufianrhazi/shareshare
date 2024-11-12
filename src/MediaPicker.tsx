@@ -251,8 +251,16 @@ export const MediaPicker: Component<{
     return (
         <div class="MediaPicker">
             <div class="MediaPicker_previewUserMedia">
-                <video class="MediaPicker_previewUserVideo" ref={videoRef} />
-                <audio class="MediaPicker_previewUserAudio" ref={audioRef} />
+                <video
+                    attr:controlslist="nodownload nofullscreen noremoteplayback"
+                    class="MediaPicker_previewUserVideo"
+                    ref={videoRef}
+                />
+                <audio
+                    attr:controlslist="nodownload nofullscreen noremoteplayback"
+                    class="MediaPicker_previewUserAudio"
+                    ref={audioRef}
+                />
                 <meter
                     class="MediaPicker_previewUserAudioGain"
                     value={gainValue}
