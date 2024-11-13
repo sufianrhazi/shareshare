@@ -1,0 +1,105 @@
+What if ShareShare was like a text presentation with ascii art and leaned WAY into it?
+
+figlet default font as logo
+figlet "cybermedium" as slide title
+text in images: "stampatello" or "threepoint"
+
+
+ ____  _   _        _    ____       _____
+/ ___|| | | |      / \  |  _ \     | ____|
+\___ \| |_| |     / _ \ | |_) |    |  _|
+ ___) |  _  |    / ___ \|  _ <     | |___
+|____/|_| |_|   /_/   \_\_|_\_\__  |_____|   ___ ___  _ __ ___
+    / __| '_ \         / _` | '__|    / _ \ / __/ _ \| '_ ` _ \
+    \__ \ | | |       | (_| | |      |  __/| (_| (_) | | | | | |
+    |___/_| |_|        \__,_|_|       \___(_)___\___/|_| |_| |_|
+               
+-------------------------------------------------------------------------------------------
+
+
+
+
+_  _ ____ _ _ _    ___ _  _ ____    _  _ ____ ___    _ _ _ ____ ____ _  _ ____
+|__| |  | | | |     |  |__| |___    |\ | |___  |     | | | |  | |__/ |_/  [__
+|  | |__| |_|_|     |  |  | |___    | \| |___  |     |_|_| |__| |  \ | \_ ___]
+
+
+
+
+
+
+        Your phone/computer is connected to a series of routers.
+                                        ^
+                                        |
+                                        |
+                                        |
+                              maybe via WiFi/cellular
+                 
+
+
+
+
+
+           ) ) ) ) ) )
+ +-----+  ) ) ) ) ) ) )   +------+                        +------+    +--------------+
+ |phone|-) ) ~wifi~  ) )->|router|===/ ....tubes.... /===>|router|===>|shshararee.com|
+ +-----+  ) ) ) ) ) ) )   +------+                        +------+    +--------------+
+           ) ) ) ) ) )
+
+                              (diagram an oversimplification)
+
+
+
+
+
+
+
+
+_  _ ____ _ _ _    ___ _  _ ____ _   _    ___ ____ _    _  _
+|__| |  | | | |     |  |__| |___  \_/      |  |__| |    |_/
+|  | |__| |_|_|     |  |  | |___   |       |  |  | |___ | \_
+
+
+
+
+
+                       like a postal address
+                     (to send/receive messages),
+        and they can have different internal/external addresses
+                                  |
+                                  |
+                               __/
+                              /  
+                             |
+                             |
+                             v
+Each router has an IP address. Many devices may all be behind the same IP address.
+
+
+
+
+
+               
+ +------------+  ) ) ) ) ) ) ) )
+ |192.168.5.23|-) ) ) ) ) ) ) ) )
+ +------------+  ) ) ) ) ) ) ) )  +-----------------------------+                                    +--------------+
+                  ) ) ~wifi~  ) )-|192.168.5.1 <-> 216.58.217.14|===/ ....stuff.... /===>|router|===>|shshararee.com|
+ +------------+  ) ) ) ) ) ) ) )  +-----------------------------+                                    +--------------+
+ |192.168.5.10|-) ) ) ) ) ) ) ) )
+ +------------+  ) ) ) ) ) ) ) )
+                
+                                   which publishes its address as a .com or whatever 
+                                                                          ^
+For you to share something with your friend, you could go through a server, which passes and may take a copy of the stuff that's shared back and forth.
+
+
+
+
+Or you could cut out the middle man with this website.
+
+1. Let your friend's device know how to connect to your computer and how to decrypt messages from you.
+2. They let you know how to connect to their computer and how to decrypt messages from them.
+3. With both these, you can share whatever you want with your friend, directly, over an encrypted data channel.
+
+
+
