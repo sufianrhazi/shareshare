@@ -5,6 +5,7 @@ import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMessages } from './ConnectedMessages';
 import { ConnectedStatus } from './ConnectedStatus';
 import type { Peer } from './Peer';
+import type { StateMachine } from './StateMachine';
 import { isWireChatMessage, isWireRenameMessage } from './types';
 import type { LocalMessage, WireDataMessage } from './types';
 
@@ -12,6 +13,7 @@ import './ConnectedView.css';
 
 export const ConnectedView: Component<{
     peer: Peer;
+    appState: StateMachine;
 }> = ({ peer }, { onMount }) => {
     const chatMessages = collection<LocalMessage>([
         {
