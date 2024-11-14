@@ -231,9 +231,7 @@ export class Peer {
     constructor(
         handler: (toSend: string) => Promise<string>,
         options: RTCConfiguration = {
-            iceServers: [
-                //{ urls: 'stun:abstract.properties:3478' }
-            ],
+            iceServers: [{ urls: 'stun:abstract.properties:3478' }],
         }
     ) {
         this.messageHandlers = new Set();
