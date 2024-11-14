@@ -15,9 +15,6 @@ export default defineConfig({
                 appSchoool: fileURLToPath(
                     new URL('./prod/chat.html', import.meta.url)
                 ),
-                appStudent: fileURLToPath(
-                    new URL('./prod/accept.html', import.meta.url)
-                ),
             },
         },
     },
