@@ -38,12 +38,11 @@ export const Checkbox: Component<
         >
             <label class="Checkbox_label" for={id}>
                 {calc(() => {
-                    let contents = undefined;
                     if (dynGet(indeterminate)) {
                         return <CircleIcon type="ellipsis" status={status} />;
                     }
                     if (dynGet(checked)) {
-                        let iconName = dynGet(icon) ?? 'check';
+                        const iconName = dynGet(icon) ?? 'check';
                         return (
                             <CircleIcon
                                 type={iconName}

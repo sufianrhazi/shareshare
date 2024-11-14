@@ -6,6 +6,16 @@
         "video audio";
     grid-template-columns: 1fr 1fr;
 }
+.viewport-xs .MediaPicker,
+.viewport-sm .MediaPicker {
+    grid-template-areas:
+        "media"
+        "share"
+        "video"
+        "audio";
+    grid-template-columns: 1fr;
+}
+
 .MediaPicker_share {
     grid-area: share;
 }

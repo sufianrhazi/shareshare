@@ -2,6 +2,7 @@ import Gooey, { calc, collection, field, model, ref } from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
 import { calc2 } from './calc2';
+import { Checkbox } from './Checkbox';
 import { mkid } from './mkid';
 
 import './MediaPicker.css';
@@ -10,9 +11,7 @@ const newId = mkid('MediaPicker');
 
 // Note: these live as global values, you either are sharing user media/displays or you aren't
 const isSharingUserMedia = field(false);
-const isSharingDisplay = field(false);
 
-const activeDisplay = field<null | MediaStream>(null);
 const userMediaDevices = collection<MediaDeviceInfo>([]);
 
 const isSharingUserVideo = field(true);
@@ -269,14 +268,15 @@ export const MediaPicker: Component<{
                 />
             </div>
             <div class="MediaPicker_share">
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={isSharingUserMedia}
-                        on:input={(e, el) => isSharingUserMedia.set(el.checked)}
-                    />{' '}
+                <Checkbox
+                    checked={isSharingUserMedia}
+                    status={calc(() =>
+                        isSharingUserMedia.get() ? 'success' : 'info'
+                    )}
+                    on:input={(e, el) => isSharingUserMedia.set(el.checked)}
+                >
                     Share camera/microphone
-                </label>
+                </Checkbox>
             </div>
             {calc(
                 () =>
@@ -284,115 +284,107 @@ export const MediaPicker: Component<{
                         <>
                             <div class="MediaPicker_videoInput">
                                 <p>Video devices:</p>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name={`${id}_videoInput`}
-                                        value="none"
-                                        checked={calc(
-                                            () =>
-                                                isSharingUserVideo.get() ===
-                                                false
-                                        )}
-                                        on:input={(e, el) => {
-                                            if (el.checked) {
-                                                isSharingUserVideo.set(false);
-                                            }
-                                        }}
-                                    />{' '}
+                                <Checkbox
+                                    type="radio"
+                                    name={`${id}_videoInput`}
+                                    value="none"
+                                    checked={calc(
+                                        () => isSharingUserVideo.get() === false
+                                    )}
+                                    on:input={(e, el) => {
+                                        if (el.checked) {
+                                            isSharingUserVideo.set(false);
+                                        }
+                                    }}
+                                >
                                     No video
-                                </label>
+                                </Checkbox>
                                 {userMediaDevices.mapView((userMediaDevice) => {
                                     if (userMediaDevice.kind !== 'videoinput')
                                         return null;
                                     return (
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                name={`${id}_videoInput`}
-                                                value={userMediaDevice.deviceId}
-                                                checked={calc(
-                                                    () =>
-                                                        isSharingUserVideo.get() &&
-                                                        previewUserMedia
-                                                            .get()
-                                                            ?.getVideoTracks()
-                                                            .some(
-                                                                (track) =>
-                                                                    track.getCapabilities()
-                                                                        .deviceId ===
-                                                                    userMediaDevice.deviceId
-                                                            )
-                                                )}
-                                                on:input={(e, el) => {
-                                                    if (el.checked) {
-                                                        isSharingUserVideo.set(
-                                                            true
-                                                        );
-                                                        videoInputPreferences.deviceId =
-                                                            userMediaDevice.deviceId;
-                                                    }
-                                                }}
-                                            />{' '}
+                                        <Checkbox
+                                            type="radio"
+                                            name={`${id}_videoInput`}
+                                            value={userMediaDevice.deviceId}
+                                            checked={calc(
+                                                () =>
+                                                    isSharingUserVideo.get() &&
+                                                    previewUserMedia
+                                                        .get()
+                                                        ?.getVideoTracks()
+                                                        .some(
+                                                            (track) =>
+                                                                track.getCapabilities()
+                                                                    .deviceId ===
+                                                                userMediaDevice.deviceId
+                                                        )
+                                            )}
+                                            on:input={(e, el) => {
+                                                if (el.checked) {
+                                                    isSharingUserVideo.set(
+                                                        true
+                                                    );
+                                                    videoInputPreferences.deviceId =
+                                                        userMediaDevice.deviceId;
+                                                }
+                                            }}
+                                        >
                                             {userMediaDevice.label}
-                                        </label>
+                                        </Checkbox>
                                     );
                                 })}
                             </div>
                             <div class="MediaPicker_audioInput">
                                 <p>Audio devices:</p>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name={`${id}_audioInput`}
-                                        value="none"
-                                        checked={calc(
-                                            () =>
-                                                isSharingUserAudio.get() ===
-                                                false
-                                        )}
-                                        on:input={(e, el) => {
-                                            if (el.checked) {
-                                                isSharingUserAudio.set(false);
-                                            }
-                                        }}
-                                    />{' '}
+                                <Checkbox
+                                    type="radio"
+                                    name={`${id}_audioInput`}
+                                    value="none"
+                                    checked={calc(
+                                        () => isSharingUserAudio.get() === false
+                                    )}
+                                    on:input={(e, el) => {
+                                        if (el.checked) {
+                                            isSharingUserAudio.set(false);
+                                        }
+                                    }}
+                                >
                                     No audio
-                                </label>
+                                </Checkbox>
                                 {userMediaDevices.mapView((userMediaDevice) => {
                                     if (userMediaDevice.kind !== 'audioinput')
                                         return null;
                                     return (
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                name={`${id}_audioInput`}
-                                                value={userMediaDevice.deviceId}
-                                                checked={calc(
-                                                    () =>
-                                                        isSharingUserAudio.get() &&
-                                                        previewUserMedia
-                                                            .get()
-                                                            ?.getAudioTracks()
-                                                            .some(
-                                                                (track) =>
-                                                                    track.getCapabilities()
-                                                                        .deviceId ===
-                                                                    userMediaDevice.deviceId
-                                                            )
-                                                )}
-                                                on:input={(e, el) => {
-                                                    if (el.checked) {
-                                                        isSharingUserAudio.set(
-                                                            true
-                                                        );
-                                                        audioInputPreferences.deviceId =
-                                                            userMediaDevice.deviceId;
-                                                    }
-                                                }}
-                                            />{' '}
+                                        <Checkbox
+                                            type="radio"
+                                            name={`${id}_audioInput`}
+                                            value={userMediaDevice.deviceId}
+                                            checked={calc(
+                                                () =>
+                                                    isSharingUserAudio.get() &&
+                                                    previewUserMedia
+                                                        .get()
+                                                        ?.getAudioTracks()
+                                                        .some(
+                                                            (track) =>
+                                                                track.getCapabilities()
+                                                                    .deviceId ===
+                                                                userMediaDevice.deviceId
+                                                        )
+                                            )}
+                                            on:input={(e, el) => {
+                                                if (el.checked) {
+                                                    isSharingUserAudio.set(
+                                                        true
+                                                    );
+                                                    audioInputPreferences.deviceId =
+                                                        userMediaDevice.deviceId;
+                                                }
+                                            }}
+                                        >
                                             {userMediaDevice.label}
-                                        </label>
+                                        </Checkbox>
                                     );
                                 })}
                             </div>

@@ -3,7 +3,6 @@
     width: 2rem;
     height: auto;
     fill: none;
-    cursor: default;
 }
 .CircleIcon-info .CircleIcon_circle {
     fill: var(--color-bg-info);
