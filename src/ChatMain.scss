@@ -152,6 +152,8 @@ html,body {
 }
 
 :root {
+    max-width: 1400px;
+
     @include xs_only {
         --em: calc(320px * var(--scale) / 320);
         .show-xs {
@@ -183,5 +185,4 @@ html,body {
             display: revert;
         }
     }
-    max-width: 1400px;
 }
