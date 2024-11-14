@@ -8,6 +8,7 @@ import type { StateMachine } from './StateMachine';
 import { assert } from './utils';
 
 export const ConnectStartGuest: Component<{
+    processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
 }> = ({ peer, appState }) => {

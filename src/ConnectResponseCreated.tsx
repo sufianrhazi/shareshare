@@ -6,35 +6,31 @@ import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 import { assert } from './utils';
 
-const makeResponseUrl = (msg: string) => {
-    return `${window.location.origin}/accept.html#${msg}`;
-};
-
 export const ConnectResponseCreated: Component<{
+    processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
 }> = ({ peer, appState }) => {
     const state = appState.getState();
     assert(state.type === 'response_created');
-    const url = makeResponseUrl(state.responseMessage);
     return (
         <>
             <p>
                 <CopyButton
                     primary
-                    data={url}
+                    data={state.responseMessage}
                     onCopy={() => {
                         appState.dispatch({
                             event: 'copy_response',
                         });
                     }}
                 >
-                    Copy response link
+                    Copy response token
                 </CopyButton>
             </p>
             <p>
-                This response link gives your friend information about how to
-                contact your computer directly.
+                This response token gives your friend information about how to
+                contact your computer directly. Send it back to them to connect.
             </p>
         </>
     );

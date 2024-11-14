@@ -1,7 +1,7 @@
 .Example {
     display: grid;
     grid-template-rows: auto 1fr;
-    margin: 1em;
+    margin: 1rem;
     border: thin black solid;
 }
 .Example_title {

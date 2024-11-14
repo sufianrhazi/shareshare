@@ -14,21 +14,21 @@
     display: flex;
     align-items: center;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--size-md);
     background-color: #dddddd;
 }
 .MediaPicker_previewUserVideo {
     grid-area: video;
-    width: 300px;
-    height: 200px;
+    width: 20rem;
+    height: 12rem;
 }
 .MediaPicker_previewUserAudio {
-    width: 300px;
+    width: 20rem;
     grid-area: audio;
 }
 .MediaPicker_previewUserAudioGain {
     grid-area: volume;
-    width: 300px;
+    width: 20rem;
 }
 .MediaPicker_videoInput {
     display: flex;

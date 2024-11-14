@@ -1,36 +1,45 @@
 .Button {
+    --Button-border: var(--color-text);
+    --Button-color: var(--color-text);
+
     cursor: pointer;
     font-weight: bold;
     display: inline-flex;
     align-items: center;
-    padding: 4px 12px;
-    border-radius: 12px;
-    gap: 8px;
+    padding: var(--size-xs) var(--size-md);
+    border-radius: var(--size-md);
+    gap: var(--size-md);
     background-color: var(--color-bg-info);
-    color: black;
-    border: 1px solid black;
-    box-shadow: 0.5px 0.25px 1px 0 black;
+    color: var(--Button-color);
+    border: var(--size-xs) solid var(--Button-border);
+    box-shadow: 0 0 var(--1px) 0 var(--Button-border);
     filter: grayscale(0);
     transition: box-shadow 100ms, background-color 100ms, filter 100ms;
 }
 .Button-sm {
     font-size: var(--font-sm);
-    padding: 2px 6px;
-    border-radius: 6px;
+    padding: var(--size-sm) var(--size-md);
+    border-radius: var(--size-md);
 }
 .Button:hover:not(:disabled),.Button:focus:not(:disabled) {
-    box-shadow: 0.5px 0.25px 2px 1px black;
+    box-shadow: 0 0 calc(2 * var(--1px)) var(--1px) var(--Button-color);
     outline: none;
 }
 .Button:active {
-    box-shadow: 0 0 0 0 black;
+    box-shadow: 0 0 0 0 var(--Button-color);
 }
 .Button-primary {
     background-color: var(--color-bg-primary);
-    color: white;
+    --Button-color: white;
 }
 .Button:disabled {
     background-color: var(--color-bg-info-disabled);
+    opacity: 0.6;
+    cursor: default;
+}
+.Button-primary:disabled {
+    background-color: var(--color-bg-primary-disabled);
+    color: var(--color-text);
     opacity: 0.6;
     cursor: default;
 }

@@ -7,6 +7,7 @@ import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 
 export const ConnectInviteCreating: Component<{
+    processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
 }> = () => {
@@ -14,7 +15,7 @@ export const ConnectInviteCreating: Component<{
         <>
             <p>
                 <Button primary disabled>
-                    <LoadingIcon /> Generating link...
+                    <LoadingIcon /> Generating invitation link...
                 </Button>
             </p>
             <p>

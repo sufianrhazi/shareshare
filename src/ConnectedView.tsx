@@ -3,7 +3,6 @@ import type { Component } from '@srhazi/gooey';
 
 import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMessages } from './ConnectedMessages';
-import { ConnectedStatus } from './ConnectedStatus';
 import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 import { isWireChatMessage, isWireRenameMessage } from './types';
@@ -12,6 +11,7 @@ import type { LocalMessage, WireDataMessage } from './types';
 import './ConnectedView.css';
 
 export const ConnectedView: Component<{
+    processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
 }> = ({ peer }, { onMount }) => {
@@ -80,7 +80,6 @@ export const ConnectedView: Component<{
 
     return (
         <div class="ConnectedView">
-            <ConnectedStatus class="ConnectedView_status" peer={peer} />
             <div class="ConnectedView_media">{sharedElements}</div>
             <ConnectedMessages
                 class="ConnectedView_messages"

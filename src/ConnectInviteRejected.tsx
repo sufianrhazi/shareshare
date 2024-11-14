@@ -5,6 +5,7 @@ import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 
 export const ConnectInviteRejected: Component<{
+    processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
 }> = () => {

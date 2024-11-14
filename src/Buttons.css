@@ -1,4 +1,4 @@
 .Buttons {
     display: flex;
-    gap: 8px;
+    gap: var(--size-md);
 }

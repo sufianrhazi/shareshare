@@ -3,7 +3,7 @@ import Gooey, { mount } from '@srhazi/gooey';
 import { Example } from './Example';
 import { Timestamp } from './Timestamp';
 
-import './Main.css';
+import './ChatMain.scss';
 
 mount(
     document.body,

@@ -37,125 +37,6 @@ export type StateMachineTransitions =
     | { event: 'create_response_failed' }
     | { event: 'copy_response' };
 
-function transition(
-    state: StateMachineState,
-    transition: StateMachineTransitions
-): StateMachineState {
-    switch (transition.event) {
-        case 'create_invitation':
-            if (state.type === 'start_host') {
-                return { type: 'invite_creating' };
-            }
-            break;
-        case 'create_invitation_ok':
-            if (state.type === 'invite_creating') {
-                return {
-                    type: 'invite_created',
-                    inviteMessage: transition.inviteMessage,
-                    copied: false,
-                };
-            }
-            break;
-        case 'create_invitation_failed':
-            if (state.type === 'invite_creating') {
-                return {
-                    type: 'error',
-                    reason: 'Something went wrong when creating an invitation',
-                };
-            }
-            break;
-        case 'copy_invitation':
-            if (state.type === 'invite_created') {
-                return {
-                    type: 'invite_created',
-                    inviteMessage: state.inviteMessage,
-                    copied: true,
-                };
-            }
-            break;
-        case 'receive_and_accept_response':
-            if (state.type === 'invite_created') {
-                return {
-                    type: 'response_accepted',
-                    inviteMessage: state.inviteMessage,
-                    responseMessage: transition.responseMessage,
-                };
-            }
-            break;
-        case 'reject_response':
-            if (state.type === 'invite_created') {
-                return state;
-            }
-            break;
-        case 'establish_connection':
-            if (state.type === 'response_accepted') {
-                return {
-                    type: 'connected',
-                };
-            }
-            break;
-        case 'establish_connection_failed':
-            if (state.type === 'response_accepted') {
-                return {
-                    type: 'error',
-                    reason: 'A connection could not be established',
-                };
-            }
-            break;
-        case 'accept_invitation':
-            if (state.type === 'start_guest') {
-                return {
-                    type: 'invite_accepted',
-                    inviteMessage: state.inviteMessage,
-                };
-            }
-            break;
-        case 'reject_invitation':
-            if (state.type === 'start_guest') {
-                return {
-                    type: 'invite_rejected',
-                    inviteMessage: state.inviteMessage,
-                };
-            }
-            break;
-        case 'create_response':
-            if (state.type === 'invite_accepted') {
-                return {
-                    type: 'response_created',
-                    inviteMessage: state.inviteMessage,
-                    responseMessage: transition.responseMessage,
-                    copied: false,
-                };
-            }
-            break;
-        case 'create_response_failed':
-            if (state.type === 'invite_accepted') {
-                return {
-                    type: 'error',
-                    reason: 'Something went wrong when creating an invitation',
-                };
-            }
-            break;
-        case 'copy_response':
-            if (state.type === 'response_created') {
-                return {
-                    type: 'response_created',
-                    inviteMessage: state.inviteMessage,
-                    responseMessage: state.responseMessage,
-                    copied: true,
-                };
-            }
-            break;
-    }
-    return {
-        type: 'error',
-        reason: `Unexpected state machine transition: ${JSON.stringify({
-            state,
-            transition,
-        })}`,
-    };
-}
-
 function getInitialState(): StateMachineState {
     let hash = location.hash;
     if (hash.startsWith('#')) {
@@ -179,6 +60,10 @@ export class StateMachine {
         this.state = field(getInitialState());
     }
 
+    _testSetState(state: StateMachineState) {
+        this.state.set(state);
+    }
+
     getType() {
         return this.type.get();
     }
@@ -187,8 +72,123 @@ export class StateMachine {
         return this.state.get();
     }
 
+    private transition(transition: StateMachineTransitions): StateMachineState {
+        const state = this.state.get();
+        switch (transition.event) {
+            case 'create_invitation':
+                if (state.type === 'start_host') {
+                    return { type: 'invite_creating' };
+                }
+                break;
+            case 'create_invitation_ok':
+                if (state.type === 'invite_creating') {
+                    return {
+                        type: 'invite_created',
+                        inviteMessage: transition.inviteMessage,
+                        copied: false,
+                    };
+                }
+                break;
+            case 'create_invitation_failed':
+                if (state.type === 'invite_creating') {
+                    return {
+                        type: 'error',
+                        reason: 'Something went wrong when creating an invitation',
+                    };
+                }
+                break;
+            case 'copy_invitation':
+                if (state.type === 'invite_created') {
+                    return {
+                        type: 'invite_created',
+                        inviteMessage: state.inviteMessage,
+                        copied: true,
+                    };
+                }
+                break;
+            case 'receive_and_accept_response':
+                if (state.type === 'invite_created') {
+                    return {
+                        type: 'response_accepted',
+                        inviteMessage: state.inviteMessage,
+                        responseMessage: transition.responseMessage,
+                    };
+                }
+                break;
+            case 'reject_response':
+                if (state.type === 'invite_created') {
+                    return state;
+                }
+                break;
+            case 'establish_connection':
+                return {
+                    type: 'connected',
+                };
+                break;
+            case 'establish_connection_failed':
+                if (state.type === 'response_accepted') {
+                    return {
+                        type: 'error',
+                        reason: 'A connection could not be established',
+                    };
+                }
+                break;
+            case 'accept_invitation':
+                if (state.type === 'start_guest') {
+                    return {
+                        type: 'invite_accepted',
+                        inviteMessage: state.inviteMessage,
+                    };
+                }
+                break;
+            case 'reject_invitation':
+                if (state.type === 'start_guest') {
+                    return {
+                        type: 'invite_rejected',
+                        inviteMessage: state.inviteMessage,
+                    };
+                }
+                break;
+            case 'create_response':
+                if (state.type === 'invite_accepted') {
+                    return {
+                        type: 'response_created',
+                        inviteMessage: state.inviteMessage,
+                        responseMessage: transition.responseMessage,
+                        copied: false,
+                    };
+                }
+                break;
+            case 'create_response_failed':
+                if (state.type === 'invite_accepted') {
+                    return {
+                        type: 'error',
+                        reason: 'Something went wrong when creating an invitation',
+                    };
+                }
+                break;
+            case 'copy_response':
+                if (state.type === 'response_created') {
+                    return {
+                        type: 'response_created',
+                        inviteMessage: state.inviteMessage,
+                        responseMessage: state.responseMessage,
+                        copied: true,
+                    };
+                }
+                break;
+        }
+        return {
+            type: 'error',
+            reason: `Unexpected state machine transition: ${JSON.stringify({
+                state,
+                transition,
+            })}`,
+        };
+    }
+
     dispatch = (action: StateMachineTransitions) => {
-        this.state.set(transition(this.state.get(), action));
+        this.state.set(this.transition(action));
     };
 
     isHost = calc(() => {

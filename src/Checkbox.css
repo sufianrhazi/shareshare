@@ -1,7 +1,7 @@
 .Checkbox {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--size-sm);
     cursor: pointer;
 }
 .Checkbox-block {
@@ -21,7 +21,7 @@
 }
 .Checkbox_icon {
     display: block;
-    width: 24px;
+    width: var(--size-lg);
     height: auto;
     cursor: pointer;
     fill: none;

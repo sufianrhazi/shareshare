@@ -15,10 +15,10 @@ export const SubwayStop: Component<{
     return (
         <div class="SubwayStop">
             {calc(() => {
-                let contents = undefined;
-                let iconName = dynGet(icon) ?? 'check';
+                const iconName = dynGet(icon) ?? 'check';
                 return (
                     <CircleIcon
+                        class="SubwayStop_icon"
                         type={iconName}
                         status={status}
                         letter={letter}

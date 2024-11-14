@@ -17,10 +17,11 @@
 .ChatApp_status {
     grid-area: status;
     padding: 0 1rem;
+    border-bottom: thin black solid;
 }
 .ChatApp_content {
+    position: relative;
     grid-area: content;
-    padding: 0 1rem;
 }
 .ChatApp_footer {
     grid-area: footer;

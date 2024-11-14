@@ -3,7 +3,7 @@ import Gooey, { collection, field, mount } from '@srhazi/gooey';
 import { ConnectedControls } from './ConnectedControls';
 import { Example } from './Example';
 
-import './Main.css';
+import './ChatMain.scss';
 
 const localName = field('alice');
 const peerName = field('bob');

@@ -4,7 +4,7 @@ import { ConnectedMessages } from './ConnectedMessages';
 import { Example } from './Example';
 import type { LocalMessage } from './types';
 
-import './Main.css';
+import './ChatMain.scss';
 
 const localName = field('alice');
 const peerName = field('bob');

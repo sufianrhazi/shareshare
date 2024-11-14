@@ -1,6 +1,8 @@
 import Gooey, { calc, dynGet } from '@srhazi/gooey';
 import type { Component, Dyn } from '@srhazi/gooey';
 
+import { classes } from './classes';
+
 import './CircleIcon.css';
 
 export type CircleIconStatus = 'success' | 'warn' | 'error' | 'info';
@@ -70,12 +72,20 @@ const InnerIcon = {
 export type CircleIconType = keyof typeof InnerIcon;
 
 export const CircleIcon: Component<{
+    class?: Dyn<string | undefined>;
     type?: Dyn<CircleIconType | undefined>;
     letter?: Dyn<string | undefined>;
     status?: Dyn<CircleIconStatus | undefined>;
-}> = ({ type, letter, status }) => (
+}> = ({ class: className, type, letter, status }) => (
     <svg
-        class={calc(() => `CircleIcon CircleIcon-${dynGet(status) || 'info'}`)}
+        class={classes('CircleIcon', className, {
+            'CircleIcon-success': calc(() => dynGet(status) === 'success'),
+            'CircleIcon-warn': calc(() => dynGet(status) === 'warn'),
+            'CircleIcon-error': calc(() => dynGet(status) === 'error'),
+            'CircleIcon-info': calc(
+                () => (dynGet(status) ?? 'info') === 'info'
+            ),
+        })}
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         stroke-width="1.5"

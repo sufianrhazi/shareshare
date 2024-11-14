@@ -1,19 +1,8 @@
 import Gooey, { calc } from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
-import { BroadcastManager } from './BroadcastManager';
+import { ChatContent } from './ChatContent';
 import type { CircleIconStatus } from './CircleIcon';
-import { ConnectedView } from './ConnectedView';
-import { ConnectError } from './ConnectError';
-import { ConnectInviteAccepted } from './ConnectInviteAccepted';
-import { ConnectInviteCreated } from './ConnectInviteCreated';
-import { ConnectInviteCreating } from './ConnectInviteCreating';
-import { ConnectInviteRejected } from './ConnectInviteRejected';
-import { ConnectResponseAccepted } from './ConnectResponseAccepted';
-import { ConnectResponseCreated } from './ConnectResponseCreated';
-import { ConnectStartGuest } from './ConnectStartGuest';
-import { ConnectStartHost } from './ConnectStartHost';
-import { ContentSwitcher } from './ContentSwitcher';
 import { Peer } from './Peer';
 import { StateMachine } from './StateMachine';
 import { SubwayStop } from './SubwayStop';
@@ -22,9 +11,30 @@ import { makePromise } from './utils';
 import './ChatApp.css';
 
 export const ChatApp: Component = () => {
-    const appState = new StateMachine();
+    let responsePromise = makePromise<string>();
+    // TODO: should peer be split into a "host" and "guest" peer for ease of understanding?
+    const peer = new Peer((toSend) => {
+        switch (appState.getType()) {
+            case 'invite_creating':
+                appState.dispatch({
+                    event: 'create_invitation_ok',
+                    inviteMessage: toSend,
+                });
+                break;
+            case 'invite_accepted':
+                appState.dispatch({
+                    event: 'create_response',
+                    responseMessage: toSend,
+                });
+        }
+        responsePromise = makePromise<string>();
+        return responsePromise.promise;
+    });
+    const processResponse = (response: string) => {
+        responsePromise.resolve(response);
+    };
 
-    const broadcastManager = new BroadcastManager('chat');
+    const appState = new StateMachine();
 
     const stepCreate = calc((): { status: CircleIconStatus } => {
         switch (appState.getType()) {
@@ -103,37 +113,10 @@ export const ChatApp: Component = () => {
         }
     });
 
-    let responsePromise = makePromise<string>();
-    // TODO: should peer be split into a "host" and "guest" peer for ease of understanding?
-    const peer = new Peer((toSend) => {
-        switch (appState.getType()) {
-            case 'invite_creating':
-                appState.dispatch({
-                    event: 'create_invitation_ok',
-                    inviteMessage: toSend,
-                });
-                break;
-            case 'invite_accepted':
-                appState.dispatch({
-                    event: 'create_response',
-                    responseMessage: toSend,
-                });
-        }
-        responsePromise = makePromise<string>();
-        return responsePromise.promise;
-    });
     peer.connected().then(() => {
         appState.dispatch({
             event: 'establish_connection',
         });
-    });
-
-    broadcastManager.onAccept(async (msg) => {
-        appState.dispatch({
-            event: 'receive_and_accept_response',
-            responseMessage: msg,
-        });
-        responsePromise.resolve(msg);
     });
 
     return (
@@ -162,22 +145,6 @@ export const ChatApp: Component = () => {
                 )}
             </div>
             <div class="ChatApp_status">
-                {calc(() => {
-                    if (
-                        broadcastManager.localTabs.some(
-                            (localTab) => localTab.role === 'chat'
-                        )
-                    ) {
-                        return (
-                            <p>
-                                <strong>Hey!</strong> It looks like you have
-                                multiple tabs of this page open. This app only
-                                works when you have one tab open -- please close
-                                the other tabs.
-                            </p>
-                        );
-                    }
-                })}
                 {calc(
                     () =>
                         appState.isGuest.get() && (
@@ -258,9 +225,7 @@ export const ChatApp: Component = () => {
                                             () => stepCreate.get().status
                                         )}
                                     >
-                                        <strong>
-                                            Create an invitation link
-                                        </strong>
+                                        <strong>Send them a link</strong>
                                     </SubwayStop>
                                     <SubwayStop
                                         icon={calc(() =>
@@ -277,8 +242,7 @@ export const ChatApp: Component = () => {
                                             () => stepInvite.get().status
                                         )}
                                     >
-                                        Send it to a friend, they send an
-                                        acceptance link back
+                                        Get an acceptance token back
                                     </SubwayStop>
                                     <SubwayStop
                                         icon={calc(() =>
@@ -295,7 +259,7 @@ export const ChatApp: Component = () => {
                                             () => stepConnect.get().status
                                         )}
                                     >
-                                        Confirm it and you're good to go!
+                                        Confirm and you're good to go!
                                     </SubwayStop>
                                 </p>
                             </>
@@ -303,21 +267,10 @@ export const ChatApp: Component = () => {
                 )}
             </div>
             <div class="ChatApp_content">
-                <ContentSwitcher
-                    value={appState.type}
-                    args={{ peer, appState }}
-                    content={{
-                        error: ConnectError,
-                        invite_created: ConnectInviteCreated,
-                        invite_rejected: ConnectInviteRejected,
-                        response_accepted: ConnectResponseAccepted,
-                        start_guest: ConnectStartGuest,
-                        start_host: ConnectStartHost,
-                        invite_accepted: ConnectInviteAccepted,
-                        response_created: ConnectResponseCreated,
-                        invite_creating: ConnectInviteCreating,
-                        connected: ConnectedView,
-                    }}
+                <ChatContent
+                    processResponse={processResponse}
+                    peer={peer}
+                    appState={appState}
                 />
             </div>
             <div class="ChatApp_footer">
@@ -385,16 +338,6 @@ export const ChatApp: Component = () => {
                             </>
                         )
                 )}
-                <pre>
-                    Peer.connectionState:{peer.connectionState};
-                    Peer.iceConnectionState:{peer.iceConnectionState};
-                    Peer.signalingState:{peer.signalingState}
-                    Peer.channel.readyState:
-                    {calc(
-                        () =>
-                            peer.channel.get()?.readyState.get() ?? 'no channel'
-                    )}
-                </pre>
             </div>
         </div>
     );

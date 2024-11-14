@@ -3,7 +3,7 @@ import Gooey, { calc, field, mount } from '@srhazi/gooey';
 import { Example } from './Example';
 import { MediaPicker } from './MediaPicker';
 
-import './Main.css';
+import './ChatMain.scss';
 
 const userMedia = field<MediaStream | undefined>(undefined);
 

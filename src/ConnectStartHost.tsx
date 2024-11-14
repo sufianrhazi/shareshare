@@ -6,6 +6,7 @@ import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 
 export const ConnectStartHost: Component<{
+    processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
 }> = ({ peer, appState }) => {
