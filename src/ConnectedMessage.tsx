@@ -13,7 +13,20 @@ export const ConnectedMessage: Component<{
     localName: Dyn<string>;
     peerName: Dyn<string>;
     message: LocalMessage;
-}> = ({ class: className, localName, peerName, message }, { onMount }) => {
+    onMount?: () => void;
+}> = (
+    {
+        class: className,
+        localName,
+        peerName,
+        message,
+        onMount: onComponentMount,
+    },
+    { onMount }
+) => {
+    if (onComponentMount) {
+        onMount(onComponentMount);
+    }
     let content: JSX.Node;
     switch (message.type) {
         case 'chat': {
