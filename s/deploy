@@ -11,6 +11,7 @@ if [ "$OUTPUT" != "" ]; then
     exit 1
 fi
 
+GIT_HASH=$(git rev-parse HEAD)
 if [ "$1" == "" ]; then
     echo_error "USAGE: $0 (--main | --try)"
     echo_error "    --main  deploy to both /${GIT_HASH} and /"
@@ -21,7 +22,6 @@ fi
 echo_info "Building..."
 s/build
 
-GIT_HASH=$(git rev-parse HEAD)
 echo_info "Deploying to shareshare.abstract.properties/${GIT_HASH}..."
 rsync -azvh prod/dist/ "abstract.properties:/srv/www/shareshare.abstract.properties/${GIT_HASH}"
 echo_warn "Uploaded to: https://shareshare.abstract.properties/${GIT_HASH}/"
