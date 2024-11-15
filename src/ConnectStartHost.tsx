@@ -19,11 +19,14 @@ export const ConnectStartHost: Component<{
                         appState.dispatch({
                             event: 'create_invitation',
                         });
-                        peer.start().catch(() => {
+                        try {
+                            peer.start();
+                        } catch (e) {
+                            console.error('Unable to create invitation', e);
                             appState.dispatch({
                                 event: 'create_invitation_failed',
                             });
-                        });
+                        }
                     }}
                 >
                     Create an invitation link

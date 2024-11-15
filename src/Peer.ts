@@ -3,7 +3,7 @@ import type { Field } from '@srhazi/gooey';
 
 import { isArray, isEither, isExact, isShape, isString } from './shape';
 import type { CheckType } from './shape';
-import { assert, makePromise, wrapError } from './utils';
+import { assert, assertResolves, makePromise, wrapError } from './utils';
 
 // Server: create offer
 // Client: accept offer and create answer
@@ -169,12 +169,14 @@ class PeerChannel {
     }
 
     onMessageReceived = (event: MessageEvent) => {
-        if (typeof event.data !== 'string') {
+        const data: unknown = event.data;
+        if (typeof data !== 'string') {
             this.notifyMessage(new Error('Unexpected message'), undefined);
+            return;
         }
         let parsed: unknown;
         try {
-            parsed = JSON.parse(event.data);
+            parsed = JSON.parse(data);
         } catch (e) {
             this.notifyMessage(wrapError(e), undefined);
             return;
@@ -292,86 +294,97 @@ export class Peer {
             console.log('client track', e.track);
             this.onChannelTrack(e.track, e.streams);
         });
-        this.peerConnection.addEventListener(
-            'negotiationneeded',
-            async (event) => {
-                const peerChannel = this.channel.get();
-                if (
-                    this.peerConnection.connectionState === 'connected' &&
-                    peerChannel
-                ) {
-                    console.log(
-                        'Attempting renegotiation over existing data channel...'
-                    );
+        this.peerConnection.addEventListener('negotiationneeded', (event) => {
+            assertResolves(
+                (async () => {
+                    const peerChannel = this.channel.get();
+                    if (
+                        this.peerConnection.connectionState === 'connected' &&
+                        peerChannel
+                    ) {
+                        console.log(
+                            'Attempting renegotiation over existing data channel...'
+                        );
+                        const offer = await this.peerConnection.createOffer();
+                        await this.peerConnection.setLocalDescription(
+                            new RTCSessionDescription(offer)
+                        );
+                        peerChannel.sendSpecial({
+                            type: 'renegotiateRequest',
+                            offer: offer as CheckType<typeof isOffer>,
+                        });
+                        this.renegotiateState = 'renegotiate-sent';
+                        return;
+                    }
+                    console.log('client negotiationneeded');
                     const offer = await this.peerConnection.createOffer();
-                    this.peerConnection.setLocalDescription(
+                    await this.peerConnection.setLocalDescription(
                         new RTCSessionDescription(offer)
                     );
-                    peerChannel.sendSpecial({
-                        type: 'renegotiateRequest',
-                        offer: offer as CheckType<typeof isOffer>,
-                    });
-                    this.renegotiateState = 'renegotiate-sent';
-                    return;
-                }
-                console.log('client negotiationneeded');
-                const offer = await this.peerConnection.createOffer();
-                this.peerConnection.setLocalDescription(
-                    new RTCSessionDescription(offer)
-                );
 
-                const iceCandidates = await this.iceCandidatesPromise.promise;
-                const { answer, candidates: remoteCandidates } =
-                    decodeNegotiateAnswer(
-                        await this.handler(
-                            encodeNegotiateOffer(offer, iceCandidates)
-                        )
+                    const iceCandidates =
+                        await this.iceCandidatesPromise.promise;
+                    const { answer, candidates: remoteCandidates } =
+                        decodeNegotiateAnswer(
+                            await this.handler(
+                                encodeNegotiateOffer(offer, iceCandidates)
+                            )
+                        );
+                    await this.peerConnection.setRemoteDescription(
+                        new RTCSessionDescription(answer)
                     );
-                this.peerConnection.setRemoteDescription(
-                    new RTCSessionDescription(answer)
-                );
 
-                for (const candidate of remoteCandidates) {
-                    this.peerConnection.addIceCandidate(candidate);
-                }
-                this.peerConnection.addIceCandidate();
-            }
-        );
+                    for (const candidate of remoteCandidates) {
+                        await this.peerConnection.addIceCandidate(candidate);
+                    }
+                    await this.peerConnection.addIceCandidate();
+                })(),
+                'negotiationneeded failure'
+            );
+        });
     }
 
     connected(): Promise<void> {
         return this.connectedPromise.promise;
     }
 
-    onChannelSpecialMessage: PeerChannelSpecialHandler = async (message) => {
-        if (message.type === 'renegotiateRequest') {
-            console.log('Received renegotiateRequest...');
-            const offer = message.offer;
-            this.peerConnection.setRemoteDescription(
-                new RTCSessionDescription(offer)
-            );
-            const answer = await this.peerConnection.createAnswer();
-            this.peerConnection.setLocalDescription(
-                new RTCSessionDescription(answer)
-            );
-            const peerChannel = this.channel.get();
-            assert(peerChannel, 'Invariant: got message on missing channel');
-            peerChannel.sendSpecial({
-                type: 'renegotiateResponse',
-                answer: answer as CheckType<typeof isAnswer>,
-            });
-        }
-        if (message.type === 'renegotiateResponse') {
-            if (this.renegotiateState === 'renegotiate-sent') {
-                console.log('Received renegotiateResponse...');
-                const answer = message.answer;
-                this.peerConnection.setRemoteDescription(
-                    new RTCSessionDescription(answer)
-                );
-            } else {
-                console.warn('Got unexpected renegotiateResponse');
-            }
-        }
+    onChannelSpecialMessage: PeerChannelSpecialHandler = (message) => {
+        assertResolves(
+            (async () => {
+                if (message.type === 'renegotiateRequest') {
+                    console.log('Received renegotiateRequest...');
+                    const offer = message.offer;
+                    await this.peerConnection.setRemoteDescription(
+                        new RTCSessionDescription(offer)
+                    );
+                    const answer = await this.peerConnection.createAnswer();
+                    await this.peerConnection.setLocalDescription(
+                        new RTCSessionDescription(answer)
+                    );
+                    const peerChannel = this.channel.get();
+                    assert(
+                        peerChannel,
+                        'Invariant: got message on missing channel'
+                    );
+                    peerChannel.sendSpecial({
+                        type: 'renegotiateResponse',
+                        answer: answer as CheckType<typeof isAnswer>,
+                    });
+                }
+                if (message.type === 'renegotiateResponse') {
+                    if (this.renegotiateState === 'renegotiate-sent') {
+                        console.log('Received renegotiateResponse...');
+                        const answer = message.answer;
+                        await this.peerConnection.setRemoteDescription(
+                            new RTCSessionDescription(answer)
+                        );
+                    } else {
+                        console.warn('Got unexpected renegotiateResponse');
+                    }
+                }
+            })(),
+            'channel special message failure'
+        );
     };
 
     onMessage(handler: PeerMessageHandler) {
@@ -413,7 +426,7 @@ export class Peer {
         peerChannel.send(message);
     }
 
-    async start() {
+    start() {
         const peerChannel = new PeerChannel(
             this.peerConnection.createDataChannel('main'),
             this.onChannelMessage,
@@ -433,12 +446,12 @@ export class Peer {
             new RTCSessionDescription(answer)
         );
         for (const candidate of remoteCandidates) {
-            this.peerConnection.addIceCandidate(candidate);
+            await this.peerConnection.addIceCandidate(candidate);
         }
-        this.peerConnection.addIceCandidate();
+        await this.peerConnection.addIceCandidate();
         const iceCandidates = await this.iceCandidatesPromise.promise;
 
-        this.accept(
+        await this.accept(
             await this.handler(encodeNegotiateAnswer(answer, iceCandidates))
         );
     }
