@@ -24,7 +24,15 @@ export const ConnectedView: Component<{
         },
     ]);
 
-    const userMediaStream = field<MediaStream | undefined>(undefined);
+    const userMediaStream = field<
+        | {
+              mediaStream: MediaStream;
+              senders: RTCRtpSender[];
+              video: HTMLVideoElement | undefined;
+              audio: HTMLAudioElement | undefined;
+          }
+        | undefined
+    >(undefined);
 
     const localName = field('You');
     const peerName = field('Friend');
@@ -76,6 +84,10 @@ export const ConnectedView: Component<{
             audio.srcObject = streams[0];
             sharedElements.push(audio);
             assertResolves(audio.play(), 'unable to play <audio>');
+            track.addEventListener('ended', () => {
+                audio.pause();
+                sharedElements.reject((el) => el === audio);
+            });
         }
     });
 
@@ -112,10 +124,26 @@ export const ConnectedView: Component<{
                 }}
                 onShareUserMedia={(mediaStream) => {
                     if (mediaStream) {
+                        const senders: RTCRtpSender[] = [];
                         for (const track of mediaStream.getTracks()) {
-                            peer.peerConnection.addTrack(track, mediaStream);
+                            senders.push(
+                                peer.peerConnection.addTrack(track, mediaStream)
+                            );
                         }
-                        userMediaStream.set(mediaStream);
+                        userMediaStream.set({
+                            mediaStream,
+                            senders,
+                            video: undefined,
+                            audio: undefined,
+                        });
+                    } else {
+                        const senders = userMediaStream.get()?.senders;
+                        if (senders) {
+                            for (const sender of senders) {
+                                peer.peerConnection.removeTrack(sender);
+                            }
+                            userMediaStream.set(undefined);
+                        }
                     }
                 }}
                 onSendMessage={(msg) => {

@@ -96,9 +96,6 @@ export const ConnectedControls: Component<{
                 onSave={(formData) => {
                     onShareUserMedia(sharedUserMedia.get());
                 }}
-                onCancel={() => {
-                    onShareUserMedia(undefined);
-                }}
             >
                 {calc(
                     () =>
