@@ -224,11 +224,6 @@ export class Peer {
         resolve: (candidates: RTCIceCandidate[]) => void;
         reject: (error: any) => void;
     };
-    connectedPromise: {
-        promise: Promise<void>;
-        resolve: () => void;
-        reject: (error: any) => void;
-    };
 
     constructor(
         handler: (toSend: string) => Promise<string>,
@@ -248,20 +243,10 @@ export class Peer {
         this.renegotiateState = undefined;
 
         this.iceCandidatesPromise = makePromise<RTCIceCandidate[]>();
-        this.connectedPromise = makePromise<void>();
 
         this.iceCandidates = [];
         this.peerConnection.addEventListener('connectionstatechange', (e) => {
-            console.log(
-                'CONNECTIONSTATECHANGE',
-                this.peerConnection.connectionState
-            );
             this.connectionState.set(this.peerConnection.connectionState);
-            if (this.peerConnection.connectionState === 'connected') {
-                this.connectedPromise.resolve();
-            } else if (this.peerConnection.connectionState === 'failed') {
-                this.connectedPromise.reject(new Error('Unable to connect'));
-            }
         });
         this.peerConnection.addEventListener('icecandidate', (e) => {
             console.log('client icecandidate', e.candidate);
@@ -346,10 +331,6 @@ export class Peer {
                 'negotiationneeded failure'
             );
         });
-    }
-
-    connected(): Promise<void> {
-        return this.connectedPromise.promise;
     }
 
     onChannelSpecialMessage: PeerChannelSpecialHandler = (message) => {

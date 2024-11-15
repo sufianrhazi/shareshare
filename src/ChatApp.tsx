@@ -10,7 +10,7 @@ import { makePromise } from './utils';
 
 import './ChatApp.css';
 
-export const ChatApp: Component = () => {
+export const ChatApp: Component = (props, { onMount }) => {
     let responsePromise = makePromise<string>();
     // TODO: should peer be split into a "host" and "guest" peer for ease of understanding?
     const peer = new Peer((toSend) => {
@@ -30,9 +30,38 @@ export const ChatApp: Component = () => {
         responsePromise = makePromise<string>();
         return responsePromise.promise;
     });
+
     const processResponse = (response: string) => {
         responsePromise.resolve(response);
     };
+
+    onMount(() => {
+        peer.connectionState.subscribe((err, connectionState) => {
+            switch (connectionState) {
+                case 'connected':
+                    appState.dispatch({
+                        event: 'establish_connection',
+                    });
+                    break;
+                case 'closed':
+                case 'connecting':
+                case 'disconnected':
+                case 'failed':
+                case 'new':
+                    console.log(
+                        'Peer connection state change:',
+                        connectionState
+                    );
+                    break;
+                default:
+                    console.error(
+                        'Unexpected peer connection state:',
+                        connectionState
+                    );
+                    break;
+            }
+        });
+    });
 
     const appState = new StateMachine();
 
@@ -112,16 +141,6 @@ export const ChatApp: Component = () => {
                 return { status: 'error' };
         }
     });
-
-    peer.connected()
-        .then(() => {
-            appState.dispatch({
-                event: 'establish_connection',
-            });
-        })
-        .catch((e) => {
-            console.error('Failed to establish connection', e);
-        });
 
     return (
         <div class="ChatApp">

@@ -30,7 +30,6 @@ export type StateMachineTransitions =
     | { event: 'receive_and_accept_response'; responseMessage: string }
     | { event: 'reject_response' }
     | { event: 'establish_connection' }
-    | { event: 'establish_connection_failed' }
     | { event: 'accept_invitation' }
     | { event: 'reject_invitation' }
     | { event: 'create_response'; responseMessage: string }
@@ -124,14 +123,6 @@ export class StateMachine {
                 return {
                     type: 'connected',
                 };
-                break;
-            case 'establish_connection_failed':
-                if (state.type === 'response_accepted') {
-                    return {
-                        type: 'error',
-                        reason: 'A connection could not be established',
-                    };
-                }
                 break;
             case 'accept_invitation':
                 if (state.type === 'start_guest') {
