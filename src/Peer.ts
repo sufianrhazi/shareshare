@@ -252,6 +252,10 @@ export class Peer {
 
         this.iceCandidates = [];
         this.peerConnection.addEventListener('connectionstatechange', (e) => {
+            console.log(
+                'CONNECTIONSTATECHANGE',
+                this.peerConnection.connectionState
+            );
             this.connectionState.set(this.peerConnection.connectionState);
             if (this.peerConnection.connectionState === 'connected') {
                 this.connectedPromise.resolve();
