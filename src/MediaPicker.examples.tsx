@@ -2,6 +2,7 @@ import Gooey, { calc, field, mount } from '@srhazi/gooey';
 
 import { Example } from './Example';
 import { MediaPicker } from './MediaPicker';
+import { assertResolves } from './utils';
 
 import './ChatMain.scss';
 
@@ -27,7 +28,7 @@ mount(
                         ref={(videoEl) => {
                             if (videoEl) {
                                 videoEl.srcObject = mediaStream;
-                                videoEl.play();
+                                assertResolves(videoEl.play());
                             }
                         }}
                     />
@@ -36,7 +37,7 @@ mount(
                         ref={(audioEl) => {
                             if (audioEl) {
                                 audioEl.srcObject = mediaStream;
-                                audioEl.play();
+                                assertResolves(audioEl.play());
                             }
                         }}
                     />

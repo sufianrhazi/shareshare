@@ -1,5 +1,5 @@
-import Gooey, { dynGet } from '@srhazi/gooey';
-import type { Component, Dyn } from '@srhazi/gooey';
+import Gooey from '@srhazi/gooey';
+import type { Component } from '@srhazi/gooey';
 
 import { classes } from './classes';
 

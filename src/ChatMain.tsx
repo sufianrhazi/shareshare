@@ -1,4 +1,4 @@
-import Gooey, { calc, field, mount } from '@srhazi/gooey';
+import Gooey, { mount } from '@srhazi/gooey';
 
 import { ChatApp } from './ChatApp';
 

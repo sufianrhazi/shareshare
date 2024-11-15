@@ -44,7 +44,7 @@ export function isShape<T extends Record<string, Check<any>>>(
             if (!(key in val)) {
                 return false;
             }
-            if (!check((val as any)[key])) {
+            if (!check((val as Record<string, any>)[key])) {
                 return false;
             }
         }

@@ -24,9 +24,13 @@ export const ConnectStartGuest: Component<{
                             appState.dispatch({
                                 event: 'accept_invitation',
                             });
-                            peer.accept(state.inviteMessage).then(() => {
-                                console.log('WHEN DOES THIS HAPPEN?');
-                            });
+                            peer.accept(state.inviteMessage)
+                                .then(() => {
+                                    console.log('WHEN DOES THIS HAPPEN?');
+                                })
+                                .catch((e) => {
+                                    console.error('Failed to accept', e);
+                                });
                         }}
                     >
                         Accept your friend's invitation

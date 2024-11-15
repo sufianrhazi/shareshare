@@ -1,4 +1,4 @@
-import Gooey, { calc, dynGet } from '@srhazi/gooey';
+import { calc, dynGet } from '@srhazi/gooey';
 import type { Dyn } from '@srhazi/gooey';
 
 // TODO(gooey): add to standard library

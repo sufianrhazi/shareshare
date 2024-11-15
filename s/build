@@ -12,6 +12,9 @@ npm install
 
 echo version="$(git rev-parse --short HEAD)" | jo > build-version.json
 
+echo_info "Linting..."
+npm exec -- eslint src/*.ts src/*.tsx
+
 echo_info "Cleaning build"
 rm -rf prod/dist/
 

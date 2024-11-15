@@ -2,6 +2,7 @@ import Gooey, { calc, dynGet, field } from '@srhazi/gooey';
 import type { Component, Dyn } from '@srhazi/gooey';
 
 import { Button } from './Button';
+import { assertResolves } from './utils';
 
 import './CopyButton.css';
 
@@ -18,14 +19,19 @@ export const CopyButton: Component<{
             class="CopyButton"
             primary={primary}
             disabled={calc(() => copied.get())}
-            on:click={async (e) => {
-                await navigator.clipboard.writeText(dynGet(data));
-                copied.set(true);
-                setTimeout(() => {
-                    copied.set(false);
-                    onCopyDone?.();
-                }, 3000);
-                onCopy?.(e);
+            on:click={(e) => {
+                assertResolves(
+                    (async () => {
+                        await navigator.clipboard.writeText(dynGet(data));
+                        copied.set(true);
+                        setTimeout(() => {
+                            copied.set(false);
+                            onCopyDone?.();
+                        }, 3000);
+                        onCopy?.(e);
+                    })(),
+                    'Unable to copy'
+                );
             }}
         >
             {calc(

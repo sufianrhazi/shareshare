@@ -9,7 +9,7 @@ export function calc2<T>({
     fn,
     cleanup,
 }: {
-    fn: (prevValue?: T | undefined) => T;
+    fn: (prevValue?: T) => T;
     cleanup?: (prevValue: T) => void;
 }) {
     let args: [T] | [] = [];

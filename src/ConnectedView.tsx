@@ -7,6 +7,7 @@ import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 import { isWireChatMessage, isWireRenameMessage } from './types';
 import type { LocalMessage, WireDataMessage } from './types';
+import { assertResolves } from './utils';
 
 import './ConnectedView.css';
 
@@ -28,7 +29,7 @@ export const ConnectedView: Component<{
     const localName = field('You');
     const peerName = field('Friend');
     peer.onMessage((message) => {
-        let parsed: WireDataMessage;
+        let parsed: unknown;
         try {
             parsed = JSON.parse(message);
         } catch (e) {
@@ -65,7 +66,7 @@ export const ConnectedView: Component<{
                 'nodownload nofullscreen noremoteplayback'
             );
             sharedElements.push(video);
-            video.play();
+            assertResolves(video.play(), 'unable to play <video>');
         } else if (track.kind === 'audio') {
             const audio = document.createElement('audio');
             audio.setAttribute(
@@ -74,7 +75,7 @@ export const ConnectedView: Component<{
             );
             audio.srcObject = streams[0];
             sharedElements.push(audio);
-            audio.play();
+            assertResolves(audio.play(), 'unable to play <audio>');
         }
     });
 

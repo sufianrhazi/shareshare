@@ -4,6 +4,7 @@ import type { Component } from '@srhazi/gooey';
 import { calc2 } from './calc2';
 import { Checkbox } from './Checkbox';
 import { mkid } from './mkid';
+import { assertResolves } from './utils';
 
 import './MediaPicker.css';
 
@@ -92,11 +93,17 @@ export const MediaPicker: Component<{
         if (mediaStream) {
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
-                videoRef.current.play();
+                assertResolves(
+                    videoRef.current.play(),
+                    'unable to play <video>'
+                );
             }
             if (audioRef.current) {
                 audioRef.current.srcObject = mediaStream;
-                audioRef.current.play();
+                assertResolves(
+                    audioRef.current.play(),
+                    'unable to play <audio>'
+                );
             }
             if (mediaStream.getAudioTracks().length > 0) {
                 mediaStreamAudioSourceNode =
@@ -158,7 +165,7 @@ export const MediaPicker: Component<{
 
     onUnmount(() => {
         updatePreview(undefined);
-        audioContext.close();
+        assertResolves(audioContext.close(), 'Unable to close audioContext');
     });
     onMount(() => {
         const unsubscribeUserMedia = calc2({
@@ -220,18 +227,25 @@ export const MediaPicker: Component<{
                             if (!listening) {
                                 navigator.mediaDevices.addEventListener(
                                     'devicechange',
-                                    updateDevices
+                                    () => {
+                                        assertResolves(updateDevices());
+                                    }
                                 );
                                 listening = true;
                             }
                             return updateDevices();
+                        })
+                        .catch((e) => {
+                            // TODO: better error state
+                            console.error('Error getting user media', e);
                         });
+
                     return () => {
                         cancelled = true;
                         if (listening) {
                             navigator.mediaDevices.removeEventListener(
                                 'devicechange',
-                                updateDevices
+                                () => assertResolves(updateDevices())
                             );
                             listening = false;
                         }

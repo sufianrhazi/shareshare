@@ -113,11 +113,15 @@ export const ChatApp: Component = () => {
         }
     });
 
-    peer.connected().then(() => {
-        appState.dispatch({
-            event: 'establish_connection',
+    peer.connected()
+        .then(() => {
+            appState.dispatch({
+                event: 'establish_connection',
+            });
+        })
+        .catch((e) => {
+            console.error('Failed to establish connection', e);
         });
-    });
 
     return (
         <div class="ChatApp">
