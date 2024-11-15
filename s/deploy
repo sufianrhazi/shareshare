@@ -11,10 +11,26 @@ if [ "$OUTPUT" != "" ]; then
     exit 1
 fi
 
+if [ "$1" == "" ]; then
+    echo_error "USAGE: $0 (--main | --try)"
+    echo_error "    --main  deploy to both /${GIT_HASH} and /"
+    echo_error "    --try   deploy to just /${GIT_HASH}"
+    exit 1
+fi
+
 echo_info "Building..."
 s/build
 
-echo_info "Deploying..."
-rsync -azvh --delete prod/dist/ abstract.properties:/srv/www/shareshare.abstract.properties
+GIT_HASH=$(git rev-parse HEAD)
+echo_info "Deploying to shareshare.abstract.properties/${GIT_HASH}..."
+rsync -azvh prod/dist/ "abstract.properties:/srv/www/shareshare.abstract.properties/${GIT_HASH}"
+echo_warn "Uploaded to: https://shareshare.abstract.properties/${GIT_HASH}/"
 
+if [ "$1" == "--main" ]; then
+    echo_info "Deploying to shareshare.abstract.properties..."
+    rsync -azvh prod/dist/ abstract.properties:/srv/www/shareshare.abstract.properties
+    echo_warn "Uploaded to: https://shareshare.abstract.properties/"
+fi
+
+echo ""
 echo_good "All done!"
