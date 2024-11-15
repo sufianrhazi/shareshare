@@ -7,11 +7,15 @@
 .ConnectedControls_form {
     display: grid;
     gap: 0.5rem;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "send input extra";
 }
 .ConnectedControls_input {
+    grid-area: input;
 }
-.ConnectedControls_button {
+.ConnectedControls_send {
+    grid-area: send;
 }
-.ConnectedControls_toolbar {
+.ConnectedControls_extra {
+    grid-area: extra;
 }
