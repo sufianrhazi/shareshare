@@ -8,11 +8,13 @@ import './ChatMain.scss';
 
 const localName = field('alice');
 const peerName = field('bob');
+const isConnected = field(true);
 mount(
     document.body,
     <>
         <Example title="Empty messages">
             <ConnectedMessages
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 chatMessages={collection<LocalMessage>([])}
@@ -20,6 +22,7 @@ mount(
         </Example>
         <Example title="First message (received)">
             <ConnectedMessages
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 chatMessages={collection<LocalMessage>([
@@ -34,6 +37,7 @@ mount(
         </Example>
         <Example style="height: 100px" title="First message (sent)">
             <ConnectedMessages
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 chatMessages={collection<LocalMessage>([
@@ -48,6 +52,7 @@ mount(
         </Example>
         <Example style="height: 100px" title="A few messages">
             <ConnectedMessages
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 chatMessages={collection<LocalMessage>([

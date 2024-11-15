@@ -12,7 +12,7 @@ if [ "$OUTPUT" != "" ]; then
 fi
 
 GIT_HASH=$(git rev-parse HEAD)
-if [ "$1" == "" ]; then
+if [ "$1" != "--main" ] && [ "$1" != "--try" ]; then
     echo_error "USAGE: $0 (--main | --try)"
     echo_error "    --main  deploy to both /${GIT_HASH} and /"
     echo_error "    --try   deploy to just /${GIT_HASH}"

@@ -100,6 +100,7 @@ export const ConnectedView: Component<{
             <div class="ConnectedView_media">{sharedElements}</div>
             <ConnectedMessages
                 class="ConnectedView_messages"
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 chatMessages={chatMessages}

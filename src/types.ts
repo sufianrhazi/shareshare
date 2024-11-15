@@ -39,10 +39,20 @@ export const isChatMessage = isShape({
     msg: isString,
 });
 
+export const isDisconnectMessage = isShape({
+    type: isExact('disconnected'),
+});
+
+export const isDirectionalMessage = isEither(
+    isChatMessage,
+    isChatRenameMessage
+);
+
 export const isLocalMessage = isEither(
     isChatMessage,
     isChatRenameMessage,
-    isInitialMessage
+    isInitialMessage,
+    isDisconnectMessage
 );
 
 export type LocalMessage = CheckType<typeof isLocalMessage>;

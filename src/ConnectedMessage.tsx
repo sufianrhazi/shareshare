@@ -4,6 +4,7 @@ import type { Component, Dyn } from '@srhazi/gooey';
 import { classes } from './classes';
 import { Timestamp } from './Timestamp';
 import type { LocalMessage } from './types';
+import { isDirectionalMessage } from './types';
 import { assertExhausted } from './utils';
 
 import './ConnectedMessage.css';
@@ -75,14 +76,25 @@ export const ConnectedMessage: Component<{
             );
             break;
         }
+        case 'disconnected': {
+            content = (
+                <>
+                    <Timestamp class="ConnectedMessage_ts" time={Date.now()} />{' '}
+                    You are no longer connected.
+                </>
+            );
+            break;
+        }
         default:
             assertExhausted(message);
     }
     return (
         <li
             class={classes('ConnectedMessage', {
-                'ConnectedMessage-in': message.from === 'peer',
-                'ConnectedMessage-out': message.from === 'you',
+                'ConnectedMessage-in':
+                    isDirectionalMessage(message) && message.from === 'peer',
+                'ConnectedMessage-out':
+                    isDirectionalMessage(message) && message.from === 'you',
                 'ConnectedMessage-info': message.type !== 'chat',
             })}
         >
