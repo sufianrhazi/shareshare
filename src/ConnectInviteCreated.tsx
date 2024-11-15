@@ -9,7 +9,7 @@ import { SubwayStop } from './SubwayStop';
 import { assert } from './utils';
 
 const makeInviteUrl = (msg: string) => {
-    return `${window.location.origin}/chat.html#${msg}`;
+    return `${window.location.origin}${window.location.pathname}#${msg}`;
 };
 
 export const ConnectInviteCreated: Component<{
