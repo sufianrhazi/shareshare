@@ -10,7 +10,7 @@ export type StateMachineState =
           inviteMessage: string;
           responseMessage: string;
       }
-    | { type: 'connected' }
+    | { type: 'connected'; connected: boolean }
     | { type: 'error'; reason: string }
     | { type: 'start_guest'; inviteMessage: string }
     | { type: 'invite_accepted'; inviteMessage: string }
@@ -30,6 +30,7 @@ export type StateMachineTransitions =
     | { event: 'receive_and_accept_response'; responseMessage: string }
     | { event: 'reject_response' }
     | { event: 'establish_connection' }
+    | { event: 'disconnect_connection' }
     | { event: 'accept_invitation' }
     | { event: 'reject_invitation' }
     | { event: 'create_response'; responseMessage: string }
@@ -122,8 +123,18 @@ export class StateMachine {
             case 'establish_connection':
                 return {
                     type: 'connected',
+                    connected: true,
                 };
                 break;
+            case 'disconnect_connection':
+                if (state.type === 'connected') {
+                    return {
+                        type: 'connected',
+                        connected: false,
+                    };
+                }
+                // Completely ignore disconnected messages unless we're connected
+                return state;
             case 'accept_invitation':
                 if (state.type === 'start_guest') {
                     return {

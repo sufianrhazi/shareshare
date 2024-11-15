@@ -7,12 +7,14 @@ import './ChatMain.scss';
 
 const localName = field('alice');
 const peerName = field('bob');
+const isConnected = field(true);
 const events = collection(['events go here']);
 mount(
     document.body,
     <>
         <Example title="Controls">
             <ConnectedControls
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 onRename={(newName) => {

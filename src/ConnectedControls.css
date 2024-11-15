@@ -1,15 +1,17 @@
 .ConnectedControls {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+}
+.ConnectedControls_form {
     display: grid;
-    grid-template-areas: "toolbar toolbar" "input send";
-    grid-template-columns: 1fr auto;
-    align-items: center;
+    gap: 0.5rem;
+    grid-template-columns: 1fr auto auto;
 }
 .ConnectedControls_input {
-    grid-area: input;
-}
-.ConnectedControls_toolbar {
-    grid-area: toolbar;
 }
 .ConnectedControls_button {
-    grid-area: send;
+}
+.ConnectedControls_toolbar {
 }

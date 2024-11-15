@@ -1,4 +1,4 @@
-import Gooey, { collection, field } from '@srhazi/gooey';
+import Gooey, { calc, collection, field } from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
 import { ConnectedControls } from './ConnectedControls';
@@ -15,7 +15,11 @@ export const ConnectedView: Component<{
     processResponse: (response: string) => void;
     peer: Peer;
     appState: StateMachine;
-}> = ({ peer }, { onMount }) => {
+}> = ({ peer, appState }, { onMount }) => {
+    const isConnected = calc(() => {
+        const state = appState.getState();
+        return state.type === 'connected' && state.connected;
+    });
     const chatMessages = collection<LocalMessage>([
         {
             type: 'chatstart',
@@ -102,6 +106,7 @@ export const ConnectedView: Component<{
             />
             <ConnectedControls
                 class="ConnectedView_controls"
+                isConnected={isConnected}
                 localName={localName}
                 peerName={peerName}
                 onRename={(newName) => {

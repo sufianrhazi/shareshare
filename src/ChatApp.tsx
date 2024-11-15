@@ -43,9 +43,13 @@ export const ChatApp: Component = (props, { onMount }) => {
                         event: 'establish_connection',
                     });
                     break;
+                case 'disconnected':
+                    appState.dispatch({
+                        event: 'disconnect_connection',
+                    });
+                    break;
                 case 'closed':
                 case 'connecting':
-                case 'disconnected':
                 case 'failed':
                 case 'new':
                     console.log(

@@ -4,6 +4,7 @@ import type { Component, Dyn } from '@srhazi/gooey';
 import { Button } from './Button';
 import { Buttons } from './Buttons';
 import { classes } from './classes';
+import { Icon } from './Icon';
 import { MediaPicker } from './MediaPicker';
 import { mkid } from './mkid';
 import { Modal } from './Modal';
@@ -14,6 +15,7 @@ const nextId = mkid('ConnectedControls');
 
 export const ConnectedControls: Component<{
     class?: string | undefined;
+    isConnected: Dyn<boolean>;
     localName: Dyn<string>;
     peerName: Dyn<string>;
     onRename: (name: string) => void;
@@ -22,6 +24,7 @@ export const ConnectedControls: Component<{
 }> = (
     {
         class: className,
+        isConnected,
         localName,
         peerName,
         onShareUserMedia,
@@ -30,6 +33,7 @@ export const ConnectedControls: Component<{
     },
     { onMount }
 ) => {
+    const showToolbar = field(false);
     const renameDialogOpen = field(false);
     const shareDialogOpen = field(false);
     const sharedUserMedia = field<undefined | MediaStream>(undefined);
@@ -39,35 +43,82 @@ export const ConnectedControls: Component<{
         const msg = toSend.get();
         if (msg.startsWith('/name ') && msg.length > 6) {
             onRename(msg.slice(6));
-        } else {
+        } else if (msg) {
             onSendMessage(toSend.get());
         }
         toSend.set('');
     };
     return (
         <div class={classes(className, 'ConnectedControls')}>
-            <input
-                id={id}
-                placeholder={calc(() => `Message ${dynGet(peerName)}`)}
-                class="ConnectedControls_input"
-                type="text"
-                value={toSend}
-                on:input={(e, el) => toSend.set(el.value)}
-                on:keydown={(e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        send();
-                    }
+            {calc(
+                () =>
+                    showToolbar.get() && (
+                        <Buttons class="ConnectedControls_toolbar">
+                            <Button
+                                on:click={() => renameDialogOpen.set(true)}
+                                size="sm"
+                            >
+                                Change name...
+                            </Button>
+                            <Button
+                                on:click={() => shareDialogOpen.set(true)}
+                                size="sm"
+                            >
+                                Share...
+                            </Button>
+                            <Button
+                                disabled={calc(() => !sharedUserMedia.get())}
+                                on:click={() => {
+                                    sharedUserMedia.set(undefined);
+                                    onShareUserMedia(undefined);
+                                }}
+                                size="sm"
+                            >
+                                Stop sharing
+                            </Button>
+                        </Buttons>
+                    )
+            )}
+            <form
+                class="ConnectedControls_form"
+                on:submit={(e, el) => {
+                    e.preventDefault();
+                    send();
                 }}
-            />
-            <Button
-                class="ConnectedControls_send"
-                primary
-                disabled={calc(() => !toSend.get())}
-                on:click={send}
             >
-                Send
-            </Button>
+                <input
+                    id={id}
+                    disabled={calc(() => !dynGet(isConnected))}
+                    placeholder={calc(() => `Message ${dynGet(peerName)}`)}
+                    class="ConnectedControls_input"
+                    name="toSend"
+                    type="text"
+                    value={toSend}
+                    on:input={(e, el) => toSend.set(el.value)}
+                />
+                <Button
+                    class="ConnectedControls_send"
+                    type="submit"
+                    primary
+                    disabled={calc(() => !dynGet(isConnected) || !toSend.get())}
+                >
+                    Send
+                </Button>
+                <Button
+                    class="ConnectedControls_extra"
+                    type="button"
+                    disabled={calc(() => !dynGet(isConnected))}
+                    on:click={() => showToolbar.set(!showToolbar.get())}
+                >
+                    {calc(() =>
+                        showToolbar.get() ? (
+                            <Icon type="minus" />
+                        ) : (
+                            <Icon type="plus" />
+                        )
+                    )}
+                </Button>
+            </form>
             <Modal
                 title="Change name"
                 open={renameDialogOpen}
@@ -108,24 +159,6 @@ export const ConnectedControls: Component<{
                         )
                 )}
             </Modal>
-            <Buttons class="ConnectedControls_toolbar">
-                <Button on:click={() => renameDialogOpen.set(true)} size="sm">
-                    Change name...
-                </Button>
-                <Button on:click={() => shareDialogOpen.set(true)} size="sm">
-                    Share...
-                </Button>
-                <Button
-                    disabled={calc(() => !sharedUserMedia.get())}
-                    on:click={() => {
-                        sharedUserMedia.set(undefined);
-                        onShareUserMedia(undefined);
-                    }}
-                    size="sm"
-                >
-                    Stop sharing
-                </Button>
-            </Buttons>
         </div>
     );
 };
