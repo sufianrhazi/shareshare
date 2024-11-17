@@ -1,0 +1,51 @@
+.Tabs {
+    display: grid;
+    grid-template-areas: "tabs" "panel";
+    grid-template-rows: auto 1fr;
+    padding: var(--size-xs);
+
+    --Tabs-border: var(--color-text);
+}
+.Tabs_tablist {
+    display: flex;
+}
+.Tabs_tablist .Tabs_tab:first-child {
+    border-top-left-radius: var(--size-md);
+}
+.Tabs_tablist .Tabs_tab:last-child {
+    border-top-right-radius: var(--size-md);
+}
+.Tabs_tab {
+    grid-area: "tabs";
+
+    cursor: pointer;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--size-xs) var(--size-md);
+    gap: var(--size-md);
+    background-color: var(--color-bg-off);
+    color: var(--color-fg-off);
+    border: none;
+    outline: var(--size-xs) solid var(--Tabs-border);
+    box-shadow: 0 0 var(--1px) 0 var(--Tabs-border);
+    filter: grayscale(0);
+    transition: box-shadow 100ms, background-color 100ms, filter 100ms;
+}
+.Tabs_tab[aria-selected="true"] {
+    background-color: var(--color-bg-on);
+    color: var(--color-fg-on);
+}
+.Tabs_tab:focus {
+    background-color: var(--color-bg-primary);
+    color: white;
+    outline: var(--size-xs) solid blue;
+}
+.Tabs_panel {
+    grid-area: "panel";
+    margin-top: var(--size-xs);
+    background: var(--color-bg);
+    outline: var(--size-xs) solid var(--Tabs-border);
+    box-shadow: 0 0 var(--1px) 0 var(--Tabs-border);
+}

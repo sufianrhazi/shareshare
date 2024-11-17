@@ -73,6 +73,11 @@ p {
     --color-bg-primary: #8888DE;
     --color-bg-primary-disabled: rgba(136, 136, 222, 0.8);
 
+    --color-fg-off: var(--color-text-hard);
+    --color-bg-off: #6c6c6c;
+    --color-fg-on: var(--color-text);
+    --color-bg-on: var(--color-bg);
+
     --font-normal: "Open Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
     --font-monospace: monospace;
 

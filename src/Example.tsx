@@ -30,10 +30,13 @@ if (!initialized) {
 export const Example: Component<{
     title: string;
     style?: string | undefined;
+    contentStyle?: string | undefined;
     children?: JSX.Node | JSX.Node[];
-}> = ({ title, style, children }) => (
+}> = ({ title, contentStyle, style, children }) => (
     <div style={style} class="Example">
         <div class="Example_title">{title}</div>
-        <div class="Example_content">{children}</div>
+        <div style={contentStyle} class="Example_content">
+            {children}
+        </div>
     </div>
 );
