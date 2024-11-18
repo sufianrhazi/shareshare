@@ -2,7 +2,11 @@ import Gooey, { calc, dynGet } from '@srhazi/gooey';
 import type { Component, Dyn } from '@srhazi/gooey';
 
 import { CircleIcon } from './CircleIcon';
-import type { CircleIconStatus, CircleIconType } from './CircleIcon';
+import type {
+    CircleIconSize,
+    CircleIconStatus,
+    CircleIconType,
+} from './CircleIcon';
 
 import './Checkbox.css';
 
@@ -14,6 +18,7 @@ export const Checkbox: Component<
         letter?: Dyn<string | undefined>;
         children?: JSX.Node | JSX.Node[];
         status?: Dyn<CircleIconStatus | undefined>;
+        size?: Dyn<CircleIconSize | undefined>;
     } & Omit<JSX.IntrinsicElements['input'], 'id' | 'hidden' | 'children'>
 > = ({
     block,
@@ -24,6 +29,7 @@ export const Checkbox: Component<
     indeterminate,
     letter,
     status,
+    size,
     type = 'checkbox',
     ...inputProps
 }) => {
@@ -39,19 +45,26 @@ export const Checkbox: Component<
             <label class="Checkbox_label" for={id}>
                 {calc(() => {
                     if (dynGet(indeterminate)) {
-                        return <CircleIcon type="ellipsis" status={status} />;
+                        return (
+                            <CircleIcon
+                                type="ellipsis"
+                                size={size}
+                                status={status}
+                            />
+                        );
                     }
                     if (dynGet(checked)) {
                         const iconName = dynGet(icon) ?? 'check';
                         return (
                             <CircleIcon
                                 type={iconName}
+                                size={size}
                                 status={status}
                                 letter={letter}
                             />
                         );
                     }
-                    return <CircleIcon status={status} />;
+                    return <CircleIcon size={size} status={status} />;
                 })}
                 {children}
             </label>

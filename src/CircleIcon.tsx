@@ -70,15 +70,20 @@ const InnerIcon = {
 } as const;
 
 export type CircleIconType = keyof typeof InnerIcon;
+export type CircleIconSize = 'sm' | 'md' | 'lg';
 
 export const CircleIcon: Component<{
     class?: Dyn<string | undefined>;
+    size?: Dyn<CircleIconSize | undefined>;
     type?: Dyn<CircleIconType | undefined>;
     letter?: Dyn<string | undefined>;
     status?: Dyn<CircleIconStatus | undefined>;
-}> = ({ class: className, type, letter, status }) => (
+}> = ({ class: className, type, size, letter, status }) => (
     <svg
         class={classes('CircleIcon', className, {
+            'CircleIcon-sm': calc(() => dynGet(size) === 'sm'),
+            'CircleIcon-md': calc(() => dynGet(size) === 'md' || !dynGet(size)),
+            'CircleIcon-lg': calc(() => dynGet(size) === 'lg'),
             'CircleIcon-success': calc(() => dynGet(status) === 'success'),
             'CircleIcon-warn': calc(() => dynGet(status) === 'warn'),
             'CircleIcon-error': calc(() => dynGet(status) === 'error'),

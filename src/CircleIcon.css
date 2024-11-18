@@ -4,6 +4,15 @@
     height: auto;
     fill: none;
 }
+.CircleIcon-sm {
+    width: 1rem;
+}
+.CircleIcon-md {
+    width: 1.5rem;
+}
+.CircleIcon-lg {
+    width: 2rem;
+}
 .CircleIcon-info .CircleIcon_circle {
     fill: var(--color-info-bg);
 }
@@ -22,6 +31,6 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    font-size: 0.5rem;
+    font-size: 0.5em;
     user-select: none;
 }

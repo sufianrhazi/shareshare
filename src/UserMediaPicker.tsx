@@ -285,6 +285,7 @@ export const UserMediaPicker: Component<{
             <div class="UserMediaPicker_share">
                 <Checkbox
                     checked={isSharingUserMedia}
+                    size="sm"
                     status={calc(() =>
                         isSharingUserMedia.get() ? 'success' : 'info'
                     )}
@@ -298,9 +299,10 @@ export const UserMediaPicker: Component<{
                     isSharingUserMedia.get() && (
                         <>
                             <div class="UserMediaPicker_videoInput">
-                                <p>Video devices:</p>
+                                <h3>Video</h3>
                                 <Checkbox
                                     type="radio"
+                                    size="sm"
                                     name={`${id}_videoInput`}
                                     value="none"
                                     checked={calc(
@@ -320,6 +322,7 @@ export const UserMediaPicker: Component<{
                                     return (
                                         <Checkbox
                                             type="radio"
+                                            size="sm"
                                             name={`${id}_videoInput`}
                                             value={userMediaDevice.deviceId}
                                             checked={calc(
@@ -351,9 +354,10 @@ export const UserMediaPicker: Component<{
                                 })}
                             </div>
                             <div class="UserMediaPicker_audioInput">
-                                <p>Audio devices:</p>
+                                <h3>Audio</h3>
                                 <Checkbox
                                     type="radio"
+                                    size="sm"
                                     name={`${id}_audioInput`}
                                     value="none"
                                     checked={calc(
@@ -373,6 +377,7 @@ export const UserMediaPicker: Component<{
                                     return (
                                         <Checkbox
                                             type="radio"
+                                            size="sm"
                                             name={`${id}_audioInput`}
                                             value={userMediaDevice.deviceId}
                                             checked={calc(
