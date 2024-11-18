@@ -4,8 +4,7 @@
 
     background-color: var(--Button-bg);
     color: var(--Button-fg);
-    outline: var(--1px) solid var(--Button-fg);
-    border: none;
+    border: var(--1px) solid var(--Button-fg);
     box-shadow: 0 0 var(--1px) 0 var(--Button-fg);
 
     cursor: pointer;
@@ -16,6 +15,10 @@
     border-radius: var(--size-md);
     gap: var(--size-md);
     transition: box-shadow 100ms, color 100ms, background-color 100ms;
+}
+.Button + .Button {
+    /* Ensure two adjacent buttons have a border that overlaps on the left side */
+    margin-left: calc(-1 * var(--1px));
 }
 .Button:hover {
     --Button-bg: var(--color-secondary-action-hover-bg);
