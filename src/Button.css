@@ -17,14 +17,14 @@
     gap: var(--size-md);
     transition: box-shadow 100ms, color 100ms, background-color 100ms;
 }
+.Button:hover {
+    --Button-bg: var(--color-secondary-action-hover-bg);
+    --Button-fg: var(--color-secondary-action-hover-fg);
+}
 .Button:disabled {
     --Button-bg: var(--color-secondary-action-disabled-bg);
     --Button-fg: var(--color-secondary-action-disabled-fg);
     cursor: default;
-}
-.Button:hover {
-    --Button-bg: var(--color-secondary-action-hover-bg);
-    --Button-fg: var(--color-secondary-action-hover-fg);
 }
 .Button:focus {
     outline-width: var(--size-xs);
@@ -34,13 +34,13 @@
     --Button-bg: var(--color-primary-action-bg);
     --Button-fg: var(--color-primary-action-fg);
 }
-.Button-primary:disabled {
-    --Button-bg: var(--color-primary-action-disabled-bg);
-    --Button-fg: var(--color-primary-action-disabled-fg);
-}
 .Button-primary:hover {
     --Button-bg: var(--color-primary-action-hover-bg);
     --Button-fg: var(--color-primary-action-hover-fg);
+}
+.Button-primary:disabled {
+    --Button-bg: var(--color-primary-action-disabled-bg);
+    --Button-fg: var(--color-primary-action-disabled-fg);
 }
 
 .Button-sm {

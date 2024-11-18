@@ -265,6 +265,7 @@ export const UserMediaPicker: Component<{
         <div class="UserMediaPicker">
             <div class="UserMediaPicker_previewUserMedia">
                 <video
+                    attr:playsinline
                     attr:controlslist="nodownload nofullscreen noremoteplayback"
                     class="UserMediaPicker_previewUserVideo"
                     ref={videoRef}
