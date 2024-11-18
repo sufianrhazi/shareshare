@@ -7,7 +7,7 @@
     margin: auto;
 }
 .Modal::backdrop {
-    background-color: var(--color-bg-modal); 
+    background-color: hsla(var(--color-normal-low-parts) 0.5); 
 }
 .Modal_buttons {
     margin: 1rem 0 0;

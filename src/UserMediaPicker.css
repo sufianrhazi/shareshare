@@ -1,0 +1,51 @@
+.UserMediaPicker {
+    display: grid;
+    grid-template-areas:
+        "media media"
+        "share share"
+        "video audio";
+    grid-template-columns: 1fr 1fr;
+}
+.viewport-xs .UserMediaPicker,
+.viewport-sm .UserMediaPicker {
+    grid-template-areas:
+        "media"
+        "share"
+        "video"
+        "audio";
+    grid-template-columns: 1fr;
+}
+
+.UserMediaPicker_share {
+    grid-area: share;
+}
+.UserMediaPicker_previewUserMedia {
+    grid-area: media;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: var(--size-md);
+    background-color: #dddddd;
+}
+.UserMediaPicker_previewUserVideo {
+    grid-area: video;
+    width: 20rem;
+    height: 12rem;
+}
+.UserMediaPicker_previewUserAudio {
+    width: 20rem;
+    grid-area: audio;
+}
+.UserMediaPicker_previewUserAudioGain {
+    grid-area: volume;
+    width: 20rem;
+}
+.UserMediaPicker_videoInput {
+    display: flex;
+    flex-direction: column;
+}
+.UserMediaPicker_audioInput {
+    display: flex;
+    flex-direction: column;
+}
+

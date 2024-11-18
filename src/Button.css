@@ -1,46 +1,50 @@
 .Button {
-    --Button-border: var(--color-text);
-    --Button-color: var(--color-text);
+    --Button-bg: var(--color-secondary-action-bg);
+    --Button-fg: var(--color-secondary-action-fg);
+
+    background-color: var(--Button-bg);
+    color: var(--Button-fg);
+    outline: var(--1px) solid var(--Button-fg);
+    border: none;
+    box-shadow: 0 0 var(--1px) 0 var(--Button-fg);
 
     cursor: pointer;
-    font-weight: bold;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: var(--size-xs) var(--size-md);
     border-radius: var(--size-md);
     gap: var(--size-md);
-    background-color: var(--color-bg-info);
-    color: var(--Button-color);
-    border: var(--size-xs) solid var(--Button-border);
-    box-shadow: 0 0 var(--1px) 0 var(--Button-border);
-    filter: grayscale(0);
-    transition: box-shadow 100ms, background-color 100ms, filter 100ms;
+    transition: box-shadow 100ms, color 100ms, background-color 100ms;
 }
+.Button:disabled {
+    --Button-bg: var(--color-secondary-action-disabled-bg);
+    --Button-fg: var(--color-secondary-action-disabled-fg);
+    cursor: default;
+}
+.Button:hover {
+    --Button-bg: var(--color-secondary-action-hover-bg);
+    --Button-fg: var(--color-secondary-action-hover-fg);
+}
+.Button:focus {
+    outline-width: var(--size-xs);
+    z-index: 0;
+}
+.Button-primary {
+    --Button-bg: var(--color-primary-action-bg);
+    --Button-fg: var(--color-primary-action-fg);
+}
+.Button-primary:disabled {
+    --Button-bg: var(--color-primary-action-disabled-bg);
+    --Button-fg: var(--color-primary-action-disabled-fg);
+}
+.Button-primary:hover {
+    --Button-bg: var(--color-primary-action-hover-bg);
+    --Button-fg: var(--color-primary-action-hover-fg);
+}
+
 .Button-sm {
     font-size: var(--font-sm);
     padding: var(--size-sm) var(--size-md);
     border-radius: var(--size-md);
-}
-.Button:hover:not(:disabled),.Button:focus:not(:disabled) {
-    box-shadow: 0 0 calc(2 * var(--1px)) var(--1px) var(--Button-color);
-    outline: none;
-}
-.Button:active {
-    box-shadow: 0 0 0 0 var(--Button-color);
-}
-.Button-primary {
-    background-color: var(--color-bg-primary);
-    --Button-color: white;
-}
-.Button:disabled {
-    background-color: var(--color-bg-info-disabled);
-    opacity: 0.6;
-    cursor: default;
-}
-.Button-primary:disabled {
-    background-color: var(--color-bg-primary-disabled);
-    color: var(--color-text);
-    opacity: 0.6;
-    cursor: default;
 }

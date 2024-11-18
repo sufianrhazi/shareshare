@@ -4,7 +4,7 @@
     grid-template-rows: auto 1fr;
     padding: var(--size-xs);
 
-    --Tabs-border: var(--color-text);
+    --Tabs-border: var(--color-normal-fg);
 }
 .Tabs_tablist {
     display: flex;
@@ -17,35 +17,17 @@
 }
 .Tabs_tab {
     grid-area: "tabs";
-
-    cursor: pointer;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--size-xs) var(--size-md);
-    gap: var(--size-md);
-    background-color: var(--color-bg-off);
-    color: var(--color-fg-off);
-    border: none;
-    outline: var(--size-xs) solid var(--Tabs-border);
-    box-shadow: 0 0 var(--1px) 0 var(--Tabs-border);
-    filter: grayscale(0);
-    transition: box-shadow 100ms, background-color 100ms, filter 100ms;
+    border-radius: 0;
 }
 .Tabs_tab[aria-selected="true"] {
-    background-color: var(--color-bg-on);
-    color: var(--color-fg-on);
-}
-.Tabs_tab:focus {
-    background-color: var(--color-bg-primary);
-    color: white;
-    outline: var(--size-xs) solid blue;
+    color: var(--color-info-fg);
+    background-color: var(--color-info-bg);
 }
 .Tabs_panel {
     grid-area: "panel";
-    margin-top: var(--size-xs);
-    background: var(--color-bg);
-    outline: var(--size-xs) solid var(--Tabs-border);
+    color: var(--color-normal-fg);
+    background-color: var(--color-normal-bg);
+    outline: var(--1px) solid var(--Tabs-border);
+    padding: var(--size-sm) var(--size-md);
     box-shadow: 0 0 var(--1px) 0 var(--Tabs-border);
 }

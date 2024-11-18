@@ -108,7 +108,7 @@ export const ConnectedControls: Component<{
                     class="ConnectedControls_extra"
                     type="button"
                     disabled={calc(() => !dynGet(isConnected))}
-                    on:click={() => showToolbar.set(!showToolbar.get())}
+                    on:click={() => shareDialogOpen.set(true)}
                 >
                     {calc(() =>
                         showToolbar.get() ? (

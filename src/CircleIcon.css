@@ -5,16 +5,16 @@
     fill: none;
 }
 .CircleIcon-info .CircleIcon_circle {
-    fill: var(--color-bg-info);
+    fill: var(--color-info-bg);
 }
 .CircleIcon-success .CircleIcon_circle {
-    fill: var(--color-bg-success);
+    fill: var(--color-success-bg);
 }
 .CircleIcon-warn .CircleIcon_circle {
-    fill: var(--color-bg-warn);
+    fill: var(--color-warn-bg);
 }
 .CircleIcon-error .CircleIcon_circle {
-    fill: var(--color-bg-error);
+    fill: var(--color-danger-bg);
 }
 .CircleIcon_letter {
     display: flex;

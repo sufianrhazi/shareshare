@@ -18,6 +18,7 @@ export const Button: Component<
             'Button-primary': primary,
             'Button-sm': calc(() => dynGet(size) === 'sm'),
         })}
+        type="button"
         {...props}
     >
         {children}

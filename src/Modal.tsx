@@ -37,7 +37,9 @@ export const Modal: Component<{
                 onClose?.();
             }}
         >
+            {title && <h3>{title}</h3>}
             <form
+                method="dialog"
                 on:submit={(e, el) => {
                     e.preventDefault();
                     if (!el.reportValidity()) {
@@ -49,7 +51,6 @@ export const Modal: Component<{
                     }
                 }}
             >
-                <h3>{title}</h3>
                 {children}
                 <Buttons class="Modal_buttons">
                     <Button primary type="submit">
@@ -58,6 +59,7 @@ export const Modal: Component<{
                     <Button
                         on:click={(e) => {
                             e.preventDefault();
+                            console.log('HI');
                             onCancel?.();
                             dynSet(open, false);
                         }}

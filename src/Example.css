@@ -2,15 +2,17 @@
     display: grid;
     grid-template-rows: auto 1fr;
     margin: 1rem;
-    border: thin black solid;
+    border: thin var(--color-normal-fg) solid;
 }
 .Example_title {
-    background-color: #DDDDDD;
-    color: #000000;
+    background-color: var(--color-normal-bg);
+    color: var(--color-normal-fg);
     font-weight: bold;
     padding: 0.25em;
 }
 .Example_content {
+    background-color: var(--color-normal-high-bg);
+    color: var(--color-normal-high-fg);
     width: 100%;
     height: 100%;
     position: relative;

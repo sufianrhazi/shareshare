@@ -2,3 +2,17 @@
     display: flex;
     gap: var(--size-md);
 }
+.Buttons-connected {
+    gap: 0;
+}
+.Buttons-connected .Button {
+    border-radius: 0;
+}
+.Buttons-connected .Button:first-child {
+    border-top-left-radius: var(--size-md);
+    border-bottom-left-radius: var(--size-md);
+}
+.Buttons-connected .Button:last-child {
+    border-top-right-radius: var(--size-md);
+    border-bottom-right-radius: var(--size-md);
+}

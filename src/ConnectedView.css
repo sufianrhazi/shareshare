@@ -8,8 +8,9 @@
 }
 .ConnectedView_messages {
     grid-area: chat;
-    background-color: #dddddd;
-    border-bottom: thin var(--color-text) solid;
+    color: var(--color-panel-fg);
+    background-color: var(--color-panel-bg);
+    border-bottom: thin var(--color-panel-fg) solid;
     position: relative;
 }
 .ConnectedView_controls {
@@ -19,7 +20,8 @@
 .ConnectedView_media {
     position: relative;
     overflow: hidden;
-    background-color: black;
+    color: var(--color-normal-fg-inv);
+    background-color: var(--color-normal-bg-inv);
     grid-area: media;
     display: flex;
     gap: var(--size-md);

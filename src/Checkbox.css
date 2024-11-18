@@ -8,16 +8,16 @@
     display: flex;
 }
 .Checkbox-info .Checkbox_circle {
-    fill: var(--color-bg-info);
+    fill: var(--color-info-bg);
 }
 .Checkbox-success .Checkbox_circle {
-    fill: var(--color-bg-success);
+    fill: var(--color-success-bg);
 }
 .Checkbox-warn .Checkbox_circle {
-    fill: var(--color-bg-warn);
+    fill: var(--color-warn-bg);
 }
 .Checkbox-error .Checkbox_circle {
-    fill: var(--color-bg-error);
+    fill: var(--color-danger-bg);
 }
 .Checkbox_icon {
     display: block;

@@ -1,5 +1,7 @@
-import Gooey, { calc, dynGet, dynSubscribe, field, ref } from '@srhazi/gooey';
-import type { ComponentLifecycle, Dyn, Ref } from '@srhazi/gooey';
+import Gooey, { calc, dynGet, dynSubscribe } from '@srhazi/gooey';
+import type { ComponentLifecycle, Dyn } from '@srhazi/gooey';
+
+import { Button } from './Button';
 
 import './Tabs.css';
 
@@ -68,7 +70,7 @@ export function Tabs<T extends string | number>(
                 }}
             >
                 {tabs.map(({ tab, label, content }) => (
-                    <button
+                    <Button
                         role="tab"
                         ref={(el) => {
                             refs[tab] = el;
@@ -85,7 +87,7 @@ export function Tabs<T extends string | number>(
                         on:click={() => onTabClick?.(tab)}
                     >
                         {label}
-                    </button>
+                    </Button>
                 ))}
             </div>
             {tabs.map(({ tab, content }) => (
