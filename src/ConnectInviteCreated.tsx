@@ -6,6 +6,7 @@ import { CopyButton } from './CopyButton';
 import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 import { SubwayStop } from './SubwayStop';
+import { TextArea } from './TextArea';
 import { assert } from './utils';
 
 const makeInviteUrl = (msg: string) => {
@@ -50,11 +51,13 @@ export const ConnectInviteCreated: Component<{
                 Send this link to your friend. They should accept and send you
                 back a response token.
             </p>
-            <p>When you get it, put their response token here:</p>
             <p>
-                <textarea on:input={(e, el) => responseToken.set(el.value)}>
-                    {responseToken}
-                </textarea>
+                <TextArea
+                    value={responseToken}
+                    onInput={(newValue) => responseToken.set(newValue)}
+                >
+                    Place their response token here:
+                </TextArea>
             </p>
             <p>
                 <SubwayStop

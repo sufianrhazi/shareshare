@@ -1,0 +1,20 @@
+.TextArea {
+    position: relative;
+    display: grid;
+    grid-template-rows: "auto auto";
+    gap: var(--size-sm);
+}
+.TextArea-contents {
+    display: contents;
+}
+.TextArea_label {
+    display: block;
+    font-size: var(--font-sm);
+    font-weight: bold;
+}
+.TextArea_input {
+    display: block;
+    resize: none;
+    border-radius: var(--size-sm);
+    padding: var(--size-sm) var(--size-md);
+}

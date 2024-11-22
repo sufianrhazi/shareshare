@@ -60,11 +60,11 @@ const isChannelMessage = isEither(isNormalMessage, isChannelSpecialMessage);
 type ChannelMessage = CheckType<typeof isChannelMessage>;
 type ChannelSpecialMessage = CheckType<typeof isChannelSpecialMessage>;
 
-function encodeNegotiateOffer(
+async function encodeNegotiateOffer(
     negotiateOffer: RTCSessionDescriptionInit,
     iceCandidates: RTCIceCandidate[]
-): string {
-    return btoa(
+): Promise<string> {
+    return await compress(
         JSON.stringify({
             type: 'negotiateOffer',
             offer: negotiateOffer,
@@ -73,10 +73,10 @@ function encodeNegotiateOffer(
     );
 }
 
-function decodeNegotiateOffer(encoded: string) {
+async function decodeNegotiateOffer(encoded: string) {
     let decoded: unknown;
     try {
-        decoded = JSON.parse(atob(encoded));
+        decoded = JSON.parse(await decompress(encoded));
     } catch (e) {
         throw new Error(
             `Failed decoding offer: ${e instanceof Error ? e.message : 'unknown error'}`,
@@ -90,11 +90,75 @@ function decodeNegotiateOffer(encoded: string) {
     return decoded;
 }
 
-function encodeNegotiateAnswer(
+/** Per https://developer.mozilla.org/en-US/docs/Web/API/Window/btoa#unicode_strings */
+function base64ToBytes(base64: string) {
+    const binString = atob(base64);
+    return Uint8Array.from(binString, (m) => m.codePointAt(0)!);
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+    const binString = Array.from(bytes, (byte) =>
+        String.fromCodePoint(byte)
+    ).join('');
+    return btoa(binString);
+}
+
+async function compress(str: string): Promise<string> {
+    const compressionStream = new CompressionStream('gzip');
+    const blob = new Blob([str]);
+    const compressed = blob.stream().pipeThrough<Uint8Array>(compressionStream);
+    const reader = compressed.getReader();
+    const chunks: Uint8Array[] = [];
+    for (;;) {
+        const chunk = await reader.read();
+        if (chunk.done) {
+            break;
+        } else if (chunk.value instanceof Uint8Array) {
+            chunks.push(chunk.value);
+        } else {
+            console.error('Unexpected chunk kind');
+            throw new Error('Unexpected chunk kind');
+        }
+    }
+    const combined = new Blob(chunks);
+    const combinedBuffer = await combined.arrayBuffer();
+    const bytes = new Uint8Array(combinedBuffer);
+    const result = bytesToBase64(bytes);
+    return result;
+}
+
+async function decompress(str: string): Promise<string> {
+    const compressed = base64ToBytes(str);
+    const compressedBlob = new Blob([compressed]);
+    const decompressionStream = new DecompressionStream('gzip');
+    const reader = compressedBlob
+        .stream()
+        .pipeThrough<Uint8Array>(decompressionStream)
+        .getReader();
+    const chunks: Uint8Array[] = [];
+    for (;;) {
+        const chunk = await reader.read();
+        if (chunk.done) {
+            break;
+        } else if (chunk.value instanceof Uint8Array) {
+            chunks.push(chunk.value);
+        } else {
+            console.error('Unexpected chunk kind');
+            throw new Error('Unexpected chunk kind');
+        }
+    }
+    const combined = new Blob(chunks);
+    const combinedBuffer = await combined.arrayBuffer();
+    const decoder = new TextDecoder();
+    const result = decoder.decode(combinedBuffer);
+    return result;
+}
+
+async function encodeNegotiateAnswer(
     negotiateAnswer: RTCSessionDescriptionInit,
     iceCandidates: RTCIceCandidate[]
-): string {
-    return btoa(
+): Promise<string> {
+    return await compress(
         JSON.stringify({
             type: 'negotiateAnswer',
             answer: negotiateAnswer,
@@ -103,10 +167,10 @@ function encodeNegotiateAnswer(
     );
 }
 
-function decodeNegotiateAnswer(encoded: string) {
+async function decodeNegotiateAnswer(encoded: string) {
     let decoded: unknown;
     try {
-        decoded = JSON.parse(atob(encoded));
+        decoded = JSON.parse(await decompress(encoded));
     } catch (e) {
         throw new Error(
             `Failed decoding answer: ${e instanceof Error ? e.message : 'unknown error'}`,
@@ -314,9 +378,9 @@ export class Peer {
                     const iceCandidates =
                         await this.iceCandidatesPromise.promise;
                     const { answer, candidates: remoteCandidates } =
-                        decodeNegotiateAnswer(
+                        await decodeNegotiateAnswer(
                             await this.handler(
-                                encodeNegotiateOffer(offer, iceCandidates)
+                                await encodeNegotiateOffer(offer, iceCandidates)
                             )
                         );
                     await this.peerConnection.setRemoteDescription(
@@ -422,7 +486,7 @@ export class Peer {
 
     async accept(encodedOffer: string) {
         const { offer, candidates: remoteCandidates } =
-            decodeNegotiateOffer(encodedOffer);
+            await decodeNegotiateOffer(encodedOffer);
         await this.peerConnection.setRemoteDescription(
             new RTCSessionDescription(offer)
         );
@@ -437,7 +501,9 @@ export class Peer {
         const iceCandidates = await this.iceCandidatesPromise.promise;
 
         await this.accept(
-            await this.handler(encodeNegotiateAnswer(answer, iceCandidates))
+            await this.handler(
+                await encodeNegotiateAnswer(answer, iceCandidates)
+            )
         );
     }
 }

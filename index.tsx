@@ -20,9 +20,6 @@ mount(
             <li>
                 <a href="/chat.html">Chat App</a>
             </li>
-            <li>
-                <a href="/accept.html">Accept App</a>
-            </li>
             {examples.map((example) => (
                 <li>
                     <a href={example.src}>{example.src}</a>

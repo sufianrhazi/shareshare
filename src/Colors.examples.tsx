@@ -47,16 +47,6 @@ const isCollected = isShape({
     degreeBg: isDegree,
 });
 
-type CollectedColor = {
-    label: Field<string>;
-    colorFg: Field<Color>;
-    lightFg: Field<Lightness>;
-    degreeFg: Field<Degree>;
-    colorBg: Field<Color>;
-    lightBg: Field<Lightness>;
-    degreeBg: Field<Degree>;
-};
-
 const collected = collection<CollectedItem>([]);
 
 function load(str: null | string) {
@@ -92,7 +82,7 @@ try {
     const tmp = localStorage.getItem('Colors.examples');
     load(tmp);
 } catch (e) {
-    // intentionally ignore errors
+    console.log('Ignoring localStorage error', e);
 }
 
 function serialize() {
