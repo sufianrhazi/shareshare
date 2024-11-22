@@ -4,7 +4,7 @@
     height: 100%;
     grid-template-areas: "media" "chat" "controls";
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: 1fr 3fr auto;
 }
 .ConnectedView_messages {
     grid-area: chat;
@@ -21,7 +21,6 @@
     position: relative;
     grid-area: media;
     overflow: hidden;
-    height: 20rem;
     padding: var(--size-sm) 0;
     color: var(--color-normal-bg);
     background-color: var(--color-normal-fg);
