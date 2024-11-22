@@ -19,15 +19,13 @@
 }
 .ConnectedView_media {
     position: relative;
-    overflow: hidden;
-    color: var(--color-normal-fg-inv);
-    background-color: var(--color-normal-bg-inv);
     grid-area: media;
-    display: flex;
-    gap: var(--size-md);
-    max-height: 5rem;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
+    height: 20rem;
+    padding: var(--size-sm) 0;
+    color: var(--color-normal-bg);
+    background-color: var(--color-normal-fg);
+    border-bottom: 2px var(--color-normal-bg) solid;
 }
 .ConnectedView_media video {
     display: block;

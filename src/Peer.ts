@@ -264,7 +264,8 @@ class PeerChannel {
 type PeerMessageHandler = (message: string) => void;
 type PeerTrackHandler = (
     track: MediaStreamTrack,
-    streams: readonly MediaStream[]
+    streams: readonly MediaStream[],
+    tranceiver: RTCRtpTransceiver
 ) => void;
 type PeerRenegotiatingState = undefined | 'renegotiate-sent';
 
@@ -344,8 +345,8 @@ export class Peer {
             this.channel.set(peerChannel);
         });
         this.peerConnection.addEventListener('track', (e) => {
-            console.log('client track', e.track);
-            this.onChannelTrack(e.track, e.streams);
+            console.log('Peer event:track', e);
+            this.onChannelTrack(e.track, e.streams, e.transceiver);
         });
         this.peerConnection.addEventListener('negotiationneeded', (event) => {
             assertResolves(
@@ -463,9 +464,9 @@ export class Peer {
         }
     };
 
-    onChannelTrack: PeerTrackHandler = (track, streams) => {
+    onChannelTrack: PeerTrackHandler = (track, streams, tranceiver) => {
         for (const handler of this.trackHandlers) {
-            handler(track, streams);
+            handler(track, streams, tranceiver);
         }
     };
 

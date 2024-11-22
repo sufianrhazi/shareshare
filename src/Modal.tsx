@@ -1,5 +1,5 @@
-import Gooey, { dynSet, dynSubscribe, ref } from '@srhazi/gooey';
-import type { Component, Field } from '@srhazi/gooey';
+import Gooey, { dynSubscribe, ref } from '@srhazi/gooey';
+import type { Component, Dyn } from '@srhazi/gooey';
 
 import { Button } from './Button';
 import { Buttons } from './Buttons';
@@ -7,11 +7,11 @@ import { Buttons } from './Buttons';
 import './Modal.css';
 
 export const Modal: Component<{
-    open: Field<boolean>;
-    title: string;
+    open: Dyn<boolean>;
+    title: JSX.Node;
     onSave?: (formData: FormData) => boolean | void;
     onCancel?: () => void;
-    onClose?: () => void;
+    onClose: () => void;
     children?: JSX.Node | JSX.Node[];
 }> = ({ open, title, onSave, onClose, onCancel, children }, { onMount }) => {
     const dialogRef = ref<HTMLDialogElement>();
@@ -30,14 +30,13 @@ export const Modal: Component<{
             ref={dialogRef}
             on:cancel={() => {
                 onCancel?.();
-                dynSet(open, false);
+                onClose?.();
             }}
             on:close={() => {
-                dynSet(open, false);
                 onClose?.();
             }}
         >
-            {title && <h3>{title}</h3>}
+            <h3>{title}</h3>
             <form
                 method="dialog"
                 on:submit={(e, el) => {
@@ -47,7 +46,7 @@ export const Modal: Component<{
                     }
                     const formData = new FormData(el);
                     if (!onSave?.(formData)) {
-                        dynSet(open, false);
+                        onClose?.();
                     }
                 }}
             >
@@ -59,9 +58,8 @@ export const Modal: Component<{
                     <Button
                         on:click={(e) => {
                             e.preventDefault();
-                            console.log('HI');
                             onCancel?.();
-                            dynSet(open, false);
+                            onClose?.();
                         }}
                     >
                         Cancel

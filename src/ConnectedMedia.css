@@ -1,0 +1,92 @@
+.ConnectedMedia {
+    display: flex;
+    justify-content: center;
+    gap: var(--size-md);
+    background-color: var(--color-normal-bg-inv);
+    color: var(--color-normal-fg-inv);
+    overflow: auto;
+}
+
+.ConnectedMediaStream {
+    --ConnectedMediaStream_borderColor: var(--color-normal-low-fg);
+    --ConnectedMediaStream_bgColor: hsl(var(--color-normal-low-fg-parts) / 0.5);
+    --ConnectedMediaStream_fgColor: var(--color-normal-low-bg);
+
+    display: block;
+    position: relative;
+    margin: 0;
+    border: none;
+    padding: 0;
+    background-color: transparent;
+    overflow: hidden;
+}
+.ConnectedMediaStream .ConnectedMediaStream_noVideoPlaceholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    height: 100%;
+    width: auto;
+    font-size: 5rem;
+    margin: 0;
+    color: var(--ConnectedMediaStream_fgColor);
+    border: 5px var(--ConnectedMediaStream_borderColor) solid;
+    border-radius: var(--size-md);
+    padding: 0;
+}
+.ConnectedMediaStream video {
+    display: block;
+    height: 100%;
+    width: auto;
+    margin: 0;
+    border: 5px var(--ConnectedMediaStream_borderColor) solid;
+    border-radius: var(--size-md);
+    padding: 0;
+}
+.ConnectedMediaStream audio {
+    position: absolute;
+    /* Audio controls are useless; position out of view */
+    top: 110%;
+}
+
+.ConnectedMediaStream .ConnectedMediaStream_muteVideoToggle {
+    position: absolute;
+    top: var(--size-md);
+    left: var(--size-md);
+    opacity: 0.5;
+    transition: opacity 100ms;
+}
+.ConnectedMediaStream:hover .ConnectedMediaStream_muteVideoToggle,
+.ConnectedMediaStream_muteVideoToggle:focus {
+    opacity: 1;
+}
+
+.ConnectedMediaStream .ConnectedMediaStream_muteAudioToggle {
+    position: absolute;
+    top: var(--size-md);
+    right: var(--size-md);
+    opacity: 0.5;
+    transition: opacity 100ms;
+}
+.ConnectedMediaStream:hover .ConnectedMediaStream_muteAudioToggle,
+.ConnectedMediaStream_muteAudioToggle:focus {
+    opacity: 1;
+}
+
+.ConnectedMediaStream_who {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: max-content;
+    margin: auto;
+    font-size: var(--font-xs);
+    font-weight: bold;
+    text-align: center;
+
+    border: thin var(--ConnectedMediaStream_borderColor) solid;
+    border-radius: var(--size-sm);
+    padding: var(--size-xs) var(--size-sm);
+    background-color: var(--ConnectedMediaStream_bgColor);
+    color: var(--ConnectedMediaStream_fgColor);
+}

@@ -149,8 +149,8 @@ mount(
             <Modal
                 title="Load"
                 open={loading}
+                onClose={() => loading.set(false)}
                 onSave={(formData) => {
-                    console.log('YAY', formData);
                     const serialized = formData.get('serialized');
                     if (isString(serialized)) {
                         load(serialized);

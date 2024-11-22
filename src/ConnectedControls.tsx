@@ -122,6 +122,7 @@ export const ConnectedControls: Component<{
             <Modal
                 title="Change name"
                 open={renameDialogOpen}
+                onClose={() => renameDialogOpen.set(false)}
                 onSave={(formData) => {
                     const displayName = formData.get('displayName');
                     if (typeof displayName === 'string') {
@@ -144,6 +145,7 @@ export const ConnectedControls: Component<{
             <Modal
                 title="Share"
                 open={shareDialogOpen}
+                onClose={() => shareDialogOpen.set(false)}
                 onSave={(formData) => {
                     onShareUserMedia(sharedUserMedia.get());
                 }}

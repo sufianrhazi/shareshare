@@ -2,12 +2,13 @@ import Gooey, { calc, collection, field } from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
 import { ConnectedControls } from './ConnectedControls';
+import { ConnectedMedia } from './ConnectedMedia';
 import { ConnectedMessages } from './ConnectedMessages';
+import { DynamicMediaStreams } from './DynamicMediaStreams';
 import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
 import { isWireChatMessage, isWireRenameMessage } from './types';
 import type { LocalMessage, WireDataMessage } from './types';
-import { assertResolves } from './utils';
 
 import './ConnectedView.css';
 
@@ -28,15 +29,9 @@ export const ConnectedView: Component<{
         },
     ]);
 
-    const userMediaStream = field<
-        | {
-              mediaStream: MediaStream;
-              senders: RTCRtpSender[];
-              video: HTMLVideoElement | undefined;
-              audio: HTMLAudioElement | undefined;
-          }
-        | undefined
-    >(undefined);
+    const dynamicMediaStreams = new DynamicMediaStreams();
+
+    let userMediaStream: MediaStream | undefined;
 
     const localName = field('You');
     const peerName = field('Friend');
@@ -68,36 +63,24 @@ export const ConnectedView: Component<{
             });
         }
     });
-    const sharedElements = collection<JSX.Node>([]);
-    peer.onTrack((track, streams) => {
-        if (track.kind === 'video') {
-            const video = document.createElement('video');
-            video.srcObject = streams[0];
-            video.setAttribute(
-                'controlslist',
-                'nodownload nofullscreen noremoteplayback'
-            );
-            sharedElements.push(video);
-            assertResolves(video.play(), 'unable to play <video>');
-        } else if (track.kind === 'audio') {
-            const audio = document.createElement('audio');
-            audio.setAttribute(
-                'controlslist',
-                'nodownload nofullscreen noremoteplayback'
-            );
-            audio.srcObject = streams[0];
-            sharedElements.push(audio);
-            assertResolves(audio.play(), 'unable to play <audio>');
-            track.addEventListener('ended', () => {
-                audio.pause();
-                sharedElements.reject((el) => el === audio);
+    peer.onTrack((track, streams, tranceiver) => {
+        console.log('GOT REMOTE TRACK', { track, streams, tranceiver });
+        for (const stream of streams) {
+            dynamicMediaStreams.addStream({
+                peer,
+                mediaStream: stream,
+                tranceiver,
+                isLocal: false,
             });
         }
     });
 
     return (
         <div class="ConnectedView">
-            <div class="ConnectedView_media">{sharedElements}</div>
+            <ConnectedMedia
+                class="ConnectedView_media"
+                dynamicMediaStreams={dynamicMediaStreams}
+            />
             <ConnectedMessages
                 class="ConnectedView_messages"
                 isConnected={isConnected}
@@ -129,6 +112,14 @@ export const ConnectedView: Component<{
                     peer.send(JSON.stringify(wireMessage));
                 }}
                 onShareUserMedia={(mediaStream) => {
+                    if (userMediaStream) {
+                        // TODO: tell the peer that this stream is going away
+                        dynamicMediaStreams.removeStream(userMediaStream);
+                        for (const track of userMediaStream.getTracks()) {
+                            track.stop();
+                        }
+                        userMediaStream = undefined;
+                    }
                     if (mediaStream) {
                         const senders: RTCRtpSender[] = [];
                         for (const track of mediaStream.getTracks()) {
@@ -136,20 +127,13 @@ export const ConnectedView: Component<{
                                 peer.peerConnection.addTrack(track, mediaStream)
                             );
                         }
-                        userMediaStream.set({
+                        dynamicMediaStreams.addStream({
+                            peer,
                             mediaStream,
                             senders,
-                            video: undefined,
-                            audio: undefined,
+                            isLocal: true,
                         });
-                    } else {
-                        const senders = userMediaStream.get()?.senders;
-                        if (senders) {
-                            for (const sender of senders) {
-                                peer.peerConnection.removeTrack(sender);
-                            }
-                            userMediaStream.set(undefined);
-                        }
+                        userMediaStream = mediaStream;
                     }
                 }}
                 onSendMessage={(msg) => {
