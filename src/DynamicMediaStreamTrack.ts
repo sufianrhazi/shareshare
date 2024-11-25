@@ -32,7 +32,7 @@ export class DynamicMediaStreamTrack implements Disposable {
         return this.track.kind;
     }
 
-    onEnded = () => {
+    onEnded = (e: Event) => {
         this.readyState.set(this.track.readyState);
         this.enabled.set(this.track.enabled);
     };
@@ -41,7 +41,7 @@ export class DynamicMediaStreamTrack implements Disposable {
         return this.track;
     }
 
-    onMuteOrUnmute = () => {
+    onMuteOrUnmute = (e: Event) => {
         this.muted.set(this.track.muted);
     };
 
@@ -51,7 +51,6 @@ export class DynamicMediaStreamTrack implements Disposable {
     }
 
     dispose() {
-        console.log('DISPOSING DynamicMediaStreamTrack', this.id, this.kind);
         clearInterval(this.pollHandle);
         this.track.removeEventListener('ended', this.onEnded);
         this.track.removeEventListener('mute', this.onMuteOrUnmute);

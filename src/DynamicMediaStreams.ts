@@ -6,36 +6,43 @@ import type { DynamicMediaStreamProps } from './DynamicMediaStream';
 
 export class DynamicMediaStreams implements Disposable {
     public dynamicStreams: Collection<DynamicMediaStream>;
+    private subscriptions: Set<() => void>;
 
     constructor() {
         this.dynamicStreams = collection([]);
+        this.subscriptions = new Set();
     }
 
     addStream(props: DynamicMediaStreamProps) {
-        console.log(
-            'ADDING STREAM',
-            props.mediaStream.id,
-            props.isLocal ? 'local' : 'remote'
-        );
         const existing = this.dynamicStreams.find(
             (dynamicStream) => dynamicStream.id === props.mediaStream.id
         );
         if (!existing) {
-            this.dynamicStreams.push(new DynamicMediaStream(props));
+            const dynamicMediaStream = new DynamicMediaStream(props);
+            this.dynamicStreams.push(dynamicMediaStream);
+            const subscription = dynamicMediaStream.hasTracks.subscribe(
+                (err, hasTracks) => {
+                    if (!err && !hasTracks) {
+                        const removed = this.dynamicStreams.reject(
+                            (ds) => dynamicMediaStream.id === ds.id
+                        );
+                        for (const dynamicStream of removed) {
+                            dynamicStream.dispose();
+                        }
+                        subscription();
+                        this.subscriptions.delete(subscription);
+                    }
+                }
+            );
+            this.subscriptions.add(subscription);
         }
     }
 
     removeStream(stream: MediaStream) {
-        console.log('REMOVING (unwrapped) STREAM', stream.id);
         const removed = this.dynamicStreams.reject(
             (dynamicStream) => dynamicStream.id === stream.id
         );
         for (const dynamicStream of removed) {
-            console.log(
-                'REMOVING STREAM',
-                dynamicStream.id,
-                dynamicStream.isLocal ? 'local' : 'remote'
-            );
             dynamicStream.dispose();
         }
     }
@@ -45,6 +52,10 @@ export class DynamicMediaStreams implements Disposable {
             dynamicStream.dispose();
         }
         this.dynamicStreams.splice(0, this.dynamicStreams.length);
+        for (const subscription of this.subscriptions) {
+            subscription();
+        }
+        this.subscriptions.clear();
     }
 
     [Symbol.dispose]() {

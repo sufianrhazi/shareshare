@@ -40,7 +40,6 @@ export const ConnectedView: Component<{
         try {
             parsed = JSON.parse(message);
         } catch (e) {
-            console.warn('Got malformed message', e);
             return;
         }
         if (isWireRenameMessage(parsed)) {
@@ -64,7 +63,6 @@ export const ConnectedView: Component<{
         }
     });
     peer.onTrack((track, streams, tranceiver) => {
-        console.log('GOT REMOTE TRACK', { track, streams, tranceiver });
         for (const stream of streams) {
             dynamicMediaStreams.addStream({
                 peer,

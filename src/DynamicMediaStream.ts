@@ -1,5 +1,5 @@
-import { collection, field } from '@srhazi/gooey';
-import type { Collection, Field } from '@srhazi/gooey';
+import { calc, collection, field } from '@srhazi/gooey';
+import type { Calculation, Collection, Field } from '@srhazi/gooey';
 
 import { DynamicMediaStreamTrack } from './DynamicMediaStreamTrack';
 import type { Peer } from './Peer';
@@ -27,6 +27,7 @@ export class DynamicMediaStream implements Disposable {
     public dynamicTracks: Collection<DynamicMediaStreamTrack>;
     public videoElement: Field<HTMLVideoElement | undefined>;
     public audioElement: Field<HTMLAudioElement | undefined>;
+    public hasTracks: Calculation<boolean>;
 
     constructor(props: DynamicMediaStreamProps) {
         this.peer = props.peer;
@@ -42,6 +43,7 @@ export class DynamicMediaStream implements Disposable {
         for (const track of this.mediaStream.getTracks()) {
             this.addTrack(track);
         }
+        this.hasTracks = calc(() => this.dynamicTracks.length > 0);
     }
 
     get id() {
@@ -49,12 +51,10 @@ export class DynamicMediaStream implements Disposable {
     }
 
     onAddTrack = (e: MediaStreamTrackEvent) => {
-        console.log('DynamicMediaStream event:addtrack', e);
         this.addTrack(e.track);
     };
 
     onRemoveTrack = (e: MediaStreamTrackEvent) => {
-        console.log('DynamicMediaStream event:removetrack', e);
         this.removeTrack(e.track);
     };
 
@@ -117,17 +117,7 @@ export class DynamicMediaStream implements Disposable {
     }
 
     dispose() {
-        console.log(
-            'DISPOSING DynamicMediaStream',
-            this.id,
-            this.isLocal ? 'local' : 'remote'
-        );
         for (const dynamicTrack of this.dynamicTracks) {
-            console.log(
-                'Removing DynamicMediaStream track',
-                dynamicTrack.id,
-                dynamicTrack.kind
-            );
             this.mediaStream.removeTrack(dynamicTrack.getTrack());
             dynamicTrack.dispose();
         }
@@ -136,7 +126,6 @@ export class DynamicMediaStream implements Disposable {
         this.mediaStream.removeEventListener('removetrack', this.onRemoveTrack);
         if (this.senders) {
             for (const sender of this.senders) {
-                console.log('Removing DynamicMediaStream sender', sender);
                 this.peer.peerConnection.removeTrack(sender);
             }
         }
