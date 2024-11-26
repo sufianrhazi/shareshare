@@ -5,27 +5,29 @@ import * as time from './time.real';
 import { makePromise } from './utils';
 
 export function init(): Promise<void> {
+    const peer = new RealPeer((toSend) => {
+        switch (appState.getType()) {
+            case 'invite_creating':
+                appState.dispatch({
+                    event: 'create_invitation_ok',
+                    inviteMessage: toSend,
+                });
+                break;
+            case 'invite_accepted':
+                appState.dispatch({
+                    event: 'create_response',
+                    responseMessage: toSend,
+                });
+        }
+        appState.peerResponsePromise = makePromise<string>();
+        return appState.peerResponsePromise.promise;
+    });
     const appState = new AppState();
+    appState.setPeer(peer);
     register({
-        state: new AppState(),
+        state: appState,
         time: time.makeReal(),
-        peer: new RealPeer((toSend) => {
-            switch (appState.getType()) {
-                case 'invite_creating':
-                    appState.dispatch({
-                        event: 'create_invitation_ok',
-                        inviteMessage: toSend,
-                    });
-                    break;
-                case 'invite_accepted':
-                    appState.dispatch({
-                        event: 'create_response',
-                        responseMessage: toSend,
-                    });
-            }
-            appState.peerResponsePromise = makePromise<string>();
-            return appState.peerResponsePromise.promise;
-        }),
+        peer,
     });
     return Promise.resolve();
 }

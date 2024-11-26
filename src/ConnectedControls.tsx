@@ -8,6 +8,7 @@ import { Icon } from './Icon';
 import { MediaPicker } from './MediaPicker';
 import { mkid } from './mkid';
 import { Modal } from './Modal';
+import { svc } from './svc';
 
 import './ConnectedControls.css';
 
@@ -16,8 +17,6 @@ const nextId = mkid('ConnectedControls');
 export const ConnectedControls: Component<{
     class?: string | undefined;
     isConnected: Dyn<boolean>;
-    localName: Dyn<string>;
-    peerName: Dyn<string>;
     onRename: (name: string) => void;
     onShareUserMedia: (media: MediaStream | undefined) => void;
     onSendMessage: (msg: string) => void;
@@ -25,8 +24,6 @@ export const ConnectedControls: Component<{
     {
         class: className,
         isConnected,
-        localName,
-        peerName,
         onShareUserMedia,
         onRename,
         onSendMessage,
@@ -89,7 +86,9 @@ export const ConnectedControls: Component<{
                 <input
                     id={id}
                     disabled={calc(() => !dynGet(isConnected))}
-                    placeholder={calc(() => `Message ${dynGet(peerName)}`)}
+                    placeholder={calc(
+                        () => `Message ${dynGet(svc('state').peerName)}`
+                    )}
                     class="ConnectedControls_input"
                     name="toSend"
                     type="text"
@@ -137,7 +136,7 @@ export const ConnectedControls: Component<{
                             name="displayName"
                             type="text"
                             required
-                            value={localName}
+                            value={svc('state').localName}
                         />
                     </label>
                 </p>

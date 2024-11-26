@@ -1,16 +1,10 @@
-import Gooey, { calc, collection, field } from '@srhazi/gooey';
+import Gooey, { calc, field } from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
 import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMedia } from './ConnectedMedia';
 import { ConnectedMessages } from './ConnectedMessages';
-import { DynamicMediaStreams } from './DynamicMediaStreams';
 import { svc } from './svc';
-import {
-    isWireChatMessage,
-    isWireRenameMessage,
-    isWireSendFile,
-} from './types';
 import type { LocalMessage, WireDataMessage } from './types';
 
 import './ConnectedView.css';
@@ -20,66 +14,8 @@ export const ConnectedView: Component = () => {
         const state = svc('state').getState();
         return state.type === 'connected' && state.connected;
     });
-    const chatMessages = collection<LocalMessage>([
-        {
-            type: 'chatstart',
-            from: 'peer',
-            sent: Date.now(),
-        },
-    ]);
-
-    const dynamicMediaStreams = new DynamicMediaStreams();
 
     let userMediaStream: MediaStream | undefined;
-
-    const localName = field('You');
-    const peerName = field('Friend');
-    svc('peer').onMessage((message) => {
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(message);
-        } catch {
-            return;
-        }
-        if (isWireRenameMessage(parsed)) {
-            const priorName = peerName.get();
-            peerName.set(parsed.name);
-            chatMessages.push({
-                type: 'name',
-                from: 'peer',
-                sent: parsed.sent,
-                priorName,
-                name: parsed.name,
-            });
-        }
-        if (isWireChatMessage(parsed)) {
-            chatMessages.push({
-                type: 'chat',
-                from: 'peer',
-                sent: parsed.sent,
-                msg: parsed.msg,
-            });
-        }
-        if (isWireSendFile(parsed)) {
-            chatMessages.push({
-                type: 'file',
-                from: 'peer',
-                sent: parsed.sent,
-                fileName: parsed.fileName,
-                length: parsed.length,
-                content: parsed.content,
-            });
-        }
-    });
-    svc('peer').onTrack((track, streams, tranceiver) => {
-        for (const stream of streams) {
-            dynamicMediaStreams.addStream({
-                mediaStream: stream,
-                tranceiver,
-                isLocal: false,
-            });
-        }
-    });
 
     const isDraggingFile = field(false);
     const onDragOver = (e: DragEvent) => {
@@ -123,25 +59,17 @@ export const ConnectedView: Component = () => {
                         </div>
                     )
             )}
-            <ConnectedMedia
-                class="ConnectedView_media"
-                dynamicMediaStreams={dynamicMediaStreams}
-            />
+            <ConnectedMedia class="ConnectedView_media" />
             <ConnectedMessages
                 class="ConnectedView_messages"
                 isConnected={isConnected}
-                localName={localName}
-                peerName={peerName}
-                chatMessages={chatMessages}
             />
             <ConnectedControls
                 class="ConnectedView_controls"
                 isConnected={isConnected}
-                localName={localName}
-                peerName={peerName}
                 onRename={(newName) => {
-                    const priorName = localName.get();
-                    localName.set(newName);
+                    const priorName = svc('state').localName.get();
+                    svc('state').localName.set(newName);
                     const localMessage: LocalMessage = {
                         type: 'name',
                         sent: Date.now(),
@@ -154,13 +82,15 @@ export const ConnectedView: Component = () => {
                         sent: Date.now(),
                         name: newName,
                     };
-                    chatMessages.push(localMessage);
+                    svc('state').chatMessages.push(localMessage);
                     svc('peer').send(JSON.stringify(wireMessage));
                 }}
                 onShareUserMedia={(mediaStream) => {
                     if (userMediaStream) {
                         // TODO: tell the peer that this stream is going away
-                        dynamicMediaStreams.removeStream(userMediaStream);
+                        svc('state').dynamicMediaStreams.removeStream(
+                            userMediaStream
+                        );
                         for (const track of userMediaStream.getTracks()) {
                             track.stop();
                         }
@@ -173,7 +103,7 @@ export const ConnectedView: Component = () => {
                                 svc('peer').addTrack(track, mediaStream)
                             );
                         }
-                        dynamicMediaStreams.addStream({
+                        svc('state').dynamicMediaStreams.addStream({
                             mediaStream,
                             senders,
                             isLocal: true,
@@ -193,7 +123,7 @@ export const ConnectedView: Component = () => {
                         sent: Date.now(),
                         msg,
                     };
-                    chatMessages.push(localMessage);
+                    svc('state').chatMessages.push(localMessage);
                     svc('peer').send(JSON.stringify(wireMessage));
                 }}
             />

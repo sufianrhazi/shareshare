@@ -1,22 +1,16 @@
 import Gooey, { calc, dynGet, ref } from '@srhazi/gooey';
-import type { Collection, Component, Dyn } from '@srhazi/gooey';
+import type { Component, Dyn } from '@srhazi/gooey';
 
 import { classes } from './classes';
 import { ConnectedMessage } from './ConnectedMessage';
-import type { LocalMessage } from './types';
+import { svc } from './svc';
 
 import './ConnectedMessages.css';
 
 export const ConnectedMessages: Component<{
     class?: string | undefined;
     isConnected: Dyn<boolean>;
-    localName: Dyn<string>;
-    peerName: Dyn<string>;
-    chatMessages: Collection<LocalMessage>;
-}> = (
-    { class: className, isConnected, localName, peerName, chatMessages },
-    { onMount }
-) => {
+}> = ({ class: className, isConnected }, { onMount }) => {
     const ulRef = ref<HTMLUListElement>();
     let atBottom = true;
     const onMessageMounted = () => {
@@ -34,11 +28,9 @@ export const ConnectedMessages: Component<{
             }}
             class={classes(className, 'ConnectedMessages')}
         >
-            {chatMessages.mapView((message) => (
+            {svc('state').chatMessages.mapView((message) => (
                 <ConnectedMessage
                     onMount={onMessageMounted}
-                    localName={localName}
-                    peerName={peerName}
                     message={message}
                 />
             ))}
@@ -47,8 +39,6 @@ export const ConnectedMessages: Component<{
                     !dynGet(isConnected) && (
                         <ConnectedMessage
                             onMount={onMessageMounted}
-                            localName={localName}
-                            peerName={peerName}
                             message={{ type: 'disconnected' }}
                         />
                     )

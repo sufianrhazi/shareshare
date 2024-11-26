@@ -12,7 +12,9 @@ export interface Services {
 let registry: Services | undefined;
 
 export function register(services: Services) {
+    const prev = registry;
     registry = services;
+    return prev;
 }
 
 export function svc<T extends keyof Services>(which: T): Services[T] {

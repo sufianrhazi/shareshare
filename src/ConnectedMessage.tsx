@@ -1,7 +1,8 @@
 import Gooey from '@srhazi/gooey';
-import type { Component, Dyn } from '@srhazi/gooey';
+import type { Component } from '@srhazi/gooey';
 
 import { classes } from './classes';
+import { svc } from './svc';
 import { Timestamp } from './Timestamp';
 import type { LocalMessage } from './types';
 import { isDirectionalMessage } from './types';
@@ -11,18 +12,10 @@ import './ConnectedMessage.css';
 
 export const ConnectedMessage: Component<{
     class?: string | undefined;
-    localName: Dyn<string>;
-    peerName: Dyn<string>;
     message: LocalMessage;
     onMount?: () => void;
 }> = (
-    {
-        class: className,
-        localName,
-        peerName,
-        message,
-        onMount: onComponentMount,
-    },
+    { class: className, message, onMount: onComponentMount },
     { onMount }
 ) => {
     if (onComponentMount) {
@@ -38,7 +31,9 @@ export const ConnectedMessage: Component<{
                         time={message.sent}
                     />{' '}
                     <strong class="ConnectedMessage_name">
-                        {message.from === 'you' ? localName : peerName}
+                        {message.from === 'you'
+                            ? svc('state').localName
+                            : svc('state').peerName}
                     </strong>
                     : {message.msg}
                 </>
@@ -71,7 +66,9 @@ export const ConnectedMessage: Component<{
                         time={message.sent}
                     />{' '}
                     You're now sharing with{' '}
-                    <strong class="ConnectedMessage_name">{peerName}</strong>
+                    <strong class="ConnectedMessage_name">
+                        {svc('state').peerName}
+                    </strong>
                 </>
             );
             break;

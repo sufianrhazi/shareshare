@@ -5,9 +5,9 @@ import { Button } from './Button';
 import { Checkbox } from './Checkbox';
 import { classes } from './classes';
 import type { DynamicMediaStream } from './DynamicMediaStream';
-import type { DynamicMediaStreams } from './DynamicMediaStreams';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
+import { svc } from './svc';
 
 import './ConnectedMedia.css';
 
@@ -158,18 +158,19 @@ const ConnectedMediaStreamManager: Component<{
 
 export const ConnectedMedia: Component<{
     class?: Dyn<string | undefined>;
-    dynamicMediaStreams: DynamicMediaStreams;
-}> = ({ class: className, dynamicMediaStreams }) => {
+}> = ({ class: className }) => {
     const configureStream = field<undefined | DynamicMediaStream>(undefined);
     return (
         <>
             <div class={classes('ConnectedMedia', className)}>
-                {dynamicMediaStreams.dynamicStreams.mapView((dynamicStream) => (
-                    <ConnectedMediaStream
-                        onClick={() => configureStream.set(dynamicStream)}
-                        dynamicMediaStream={dynamicStream}
-                    />
-                ))}
+                {svc('state').dynamicMediaStreams.dynamicStreams.mapView(
+                    (dynamicStream) => (
+                        <ConnectedMediaStream
+                            onClick={() => configureStream.set(dynamicStream)}
+                            dynamicMediaStream={dynamicStream}
+                        />
+                    )
+                )}
             </div>
             <Modal
                 title={

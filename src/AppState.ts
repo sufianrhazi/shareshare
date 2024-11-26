@@ -1,8 +1,16 @@
-import { calc, field } from '@srhazi/gooey';
-import type { Field } from '@srhazi/gooey';
+import { calc, collection, field } from '@srhazi/gooey';
+import type { Collection, Field } from '@srhazi/gooey';
 
+import { DynamicMediaStreams } from './DynamicMediaStreams';
+import type { PeerService } from './Peer';
+import {
+    isWireChatMessage,
+    isWireRenameMessage,
+    isWireSendFile,
+} from './types';
+import type { LocalMessage } from './types';
 import type { PromiseHandle } from './utils';
-import { makePromise } from './utils';
+import { assert, makePromise } from './utils';
 
 export type StateMachineState =
     | { type: 'start_host' }
@@ -55,15 +63,117 @@ function getInitialState(): StateMachineState {
     return { type: 'start_host' };
 }
 
-export class AppState {
+export class AppState implements Disposable {
     public peerResponsePromise: PromiseHandle<string>;
+    public dynamicMediaStreams: DynamicMediaStreams;
+    public chatMessages: Collection<LocalMessage>;
+    public localName: Field<string>;
+    public peerName: Field<string>;
+
     private state: Field<StateMachineState>;
     public type = calc(() => this.state.get().type);
+    private peer?: PeerService;
+    private unsubscribeConnectionState?: () => void;
+    private unsubscribeMessage?: () => void;
+    private unsubscribeTrack?: () => void;
 
     constructor() {
-        this.state = field(getInitialState());
-        // TODO: this is super awkward
+        // TODO: this is super awkward; the way the state and peer are coupled is not good
         this.peerResponsePromise = makePromise<string>();
+
+        this.state = field(getInitialState());
+
+        this.dynamicMediaStreams = new DynamicMediaStreams();
+        this.chatMessages = collection([]);
+        this.localName = field('You');
+        this.peerName = field('Friend');
+
+        this.peer = undefined;
+        this.unsubscribeConnectionState = undefined;
+        this.unsubscribeMessage = undefined;
+        this.unsubscribeTrack = undefined;
+    }
+
+    setPeer(peer: PeerService) {
+        assert(!this.peer, 'Must set peer only once');
+        this.peer = peer;
+        let isConnected = false;
+        this.unsubscribeConnectionState = this.peer.connectionState.subscribe(
+            (err, connectionState) => {
+                if (!err) {
+                    const wasConnected = isConnected;
+                    isConnected = connectionState === 'connected';
+                    if (!wasConnected && isConnected) {
+                        this.chatMessages.push({
+                            type: 'chatstart',
+                            from: 'peer',
+                            sent: Date.now(),
+                        });
+                    } else if (wasConnected && !isConnected) {
+                        this.chatMessages.push({
+                            type: 'disconnected',
+                        });
+                    }
+                }
+            }
+        );
+
+        this.unsubscribeMessage = peer.onMessage((message) => {
+            let parsed: unknown;
+            try {
+                parsed = JSON.parse(message);
+            } catch {
+                return;
+            }
+            if (isWireRenameMessage(parsed)) {
+                const priorName = this.peerName.get();
+                this.peerName.set(parsed.name);
+                this.chatMessages.push({
+                    type: 'name',
+                    from: 'peer',
+                    sent: parsed.sent,
+                    priorName,
+                    name: parsed.name,
+                });
+            }
+            if (isWireChatMessage(parsed)) {
+                this.chatMessages.push({
+                    type: 'chat',
+                    from: 'peer',
+                    sent: parsed.sent,
+                    msg: parsed.msg,
+                });
+            }
+            if (isWireSendFile(parsed)) {
+                this.chatMessages.push({
+                    type: 'file',
+                    from: 'peer',
+                    sent: parsed.sent,
+                    fileName: parsed.fileName,
+                    length: parsed.length,
+                    content: parsed.content,
+                });
+            }
+        });
+        this.unsubscribeTrack = peer.onTrack((track, streams, tranceiver) => {
+            for (const stream of streams) {
+                this.dynamicMediaStreams.addStream({
+                    mediaStream: stream,
+                    tranceiver,
+                    isLocal: false,
+                });
+            }
+        });
+    }
+
+    dispose() {
+        this.unsubscribeConnectionState?.();
+        this.unsubscribeMessage?.();
+        this.unsubscribeTrack?.();
+    }
+
+    [Symbol.dispose]() {
+        this.dispose();
     }
 
     processResponse(response: string) {

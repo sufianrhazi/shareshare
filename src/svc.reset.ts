@@ -5,10 +5,14 @@ import type { Services } from './svc';
 import * as time from './time.fake';
 
 export function _testReset(services: Partial<Services> = {}) {
-    register({
-        state: new AppState(),
+    const peer = new PeerFake();
+    const state = new AppState();
+    state.setPeer(peer);
+    const previousState = register({
+        state,
         time: time.makeFake(),
-        peer: new PeerFake(),
+        peer,
         ...services,
     });
+    previousState?.state.dispose();
 }
