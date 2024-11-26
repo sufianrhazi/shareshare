@@ -33,4 +33,8 @@ export interface PeerService {
     start: () => void;
 
     accept: (encodedOffer: string) => Promise<void>;
+
+    _testGetSentMessages?: () => string[];
+
+    _testReceiveMessage?: (message: string) => void;
 }

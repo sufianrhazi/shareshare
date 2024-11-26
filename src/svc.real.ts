@@ -1,13 +1,13 @@
+import { AppState } from './AppState';
 import { RealPeer } from './Peer.real';
-import { StateMachine } from './StateMachine';
 import { register } from './svc';
 import * as time from './time.real';
 import { makePromise } from './utils';
 
 export function init(): Promise<void> {
-    const appState = new StateMachine();
+    const appState = new AppState();
     register({
-        state: new StateMachine(),
+        state: new AppState(),
         time: time.makeReal(),
         peer: new RealPeer((toSend) => {
             switch (appState.getType()) {

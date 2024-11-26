@@ -90,7 +90,11 @@ export class PeerChannel {
     };
 
     send(msg: string) {
-        this.channel.send(JSON.stringify({ type: 'normal', message: msg }));
+        const message = JSON.stringify({ type: 'normal', message: msg });
+        if (message.length > 16384) {
+            throw new Error('Message too large');
+        }
+        this.channel.send(message);
     }
 
     sendSpecial(msg: ChannelSpecialMessage) {

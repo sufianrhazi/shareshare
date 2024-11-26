@@ -1,11 +1,11 @@
+import type { AppState } from './AppState';
 import type { PeerService } from './Peer';
-import type { StateMachine } from './StateMachine';
 import type { TimeService } from './time';
 import { assert } from './utils';
 
 export interface Services {
     time: TimeService;
-    state: StateMachine;
+    state: AppState;
     peer: PeerService;
 }
 

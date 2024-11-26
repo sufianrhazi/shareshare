@@ -1,8 +1,8 @@
 import Gooey, { calc, mount } from '@srhazi/gooey';
 
+import type { StateMachineState } from './AppState';
 import { ChatContent } from './ChatContent';
 import { Example } from './Example';
-import type { StateMachineState } from './StateMachine';
 import { svc } from './svc';
 import { _testReset } from './svc.reset';
 

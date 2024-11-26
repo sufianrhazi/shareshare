@@ -1,9 +1,7 @@
-import { field } from '@srhazi/gooey';
-import type { Field } from '@srhazi/gooey';
-
+import { base64ToBytes, bytesToBase64 } from './base64';
 import { isArray, isEither, isExact, isShape, isString } from './shape';
 import type { CheckType } from './shape';
-import { assert, assertResolves, makePromise, wrapError } from './utils';
+import { assert } from './utils';
 
 // Server: create offer
 // Client: accept offer and create answer
@@ -91,19 +89,6 @@ export async function decodeNegotiateOffer(encoded: string) {
         'Failed decoding offer: unexpected decoded result'
     );
     return decoded;
-}
-
-/** Per https://developer.mozilla.org/en-US/docs/Web/API/Window/btoa#unicode_strings */
-export function base64ToBytes(base64: string) {
-    const binString = atob(base64);
-    return Uint8Array.from(binString, (m) => m.codePointAt(0)!);
-}
-
-export function bytesToBase64(bytes: Uint8Array) {
-    const binString = Array.from(bytes, (byte) =>
-        String.fromCodePoint(byte)
-    ).join('');
-    return btoa(binString);
 }
 
 export async function compress(str: string): Promise<string> {

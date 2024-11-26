@@ -55,7 +55,7 @@ function getInitialState(): StateMachineState {
     return { type: 'start_host' };
 }
 
-export class StateMachine {
+export class AppState {
     public peerResponsePromise: PromiseHandle<string>;
     private state: Field<StateMachineState>;
     public type = calc(() => this.state.get().type);

@@ -57,6 +57,7 @@ export function makeFake(): TimeService {
             for (const immediate of runNow) {
                 immediate();
             }
+            return Promise.resolve();
         },
         _set: (newNow: number) => {
             now = newNow;
