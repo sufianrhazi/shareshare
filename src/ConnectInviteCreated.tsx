@@ -3,9 +3,8 @@ import type { Component } from '@srhazi/gooey';
 
 import { Button } from './Button';
 import { CopyButton } from './CopyButton';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
 import { SubwayStop } from './SubwayStop';
+import { svc } from './svc';
 import { TextArea } from './TextArea';
 import { assert } from './utils';
 
@@ -13,17 +12,13 @@ const makeInviteUrl = (msg: string) => {
     return `${window.location.origin}${window.location.pathname}#${msg}`;
 };
 
-export const ConnectInviteCreated: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = ({ processResponse, peer, appState }) => {
-    const state = appState.getState();
+export const ConnectInviteCreated: Component = () => {
+    const state = svc('state').getState();
     assert(state.type === 'invite_created');
     const url = makeInviteUrl(state.inviteMessage);
     const responseToken = field<string | undefined>(undefined);
     const isCopied = calc(() => {
-        const s = appState.getState();
+        const s = svc('state').getState();
         assert(s.type === 'invite_created');
         return s.copied;
     });
@@ -38,7 +33,7 @@ export const ConnectInviteCreated: Component<{
                         primary={calc(() => !isCopied.get())}
                         data={url}
                         onCopy={() => {
-                            appState.dispatch({
+                            svc('state').dispatch({
                                 event: 'copy_invitation',
                             });
                         }}
@@ -70,8 +65,8 @@ export const ConnectInviteCreated: Component<{
                         on:click={() => {
                             const responseMessage = responseToken.get();
                             if (responseMessage) {
-                                processResponse(responseMessage);
-                                appState.dispatch({
+                                svc('state').processResponse(responseMessage);
+                                svc('state').dispatch({
                                     event: 'receive_and_accept_response',
                                     responseMessage,
                                 });

@@ -5,8 +5,7 @@ import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMedia } from './ConnectedMedia';
 import { ConnectedMessages } from './ConnectedMessages';
 import { DynamicMediaStreams } from './DynamicMediaStreams';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
+import { svc } from './svc';
 import {
     isWireChatMessage,
     isWireRenameMessage,
@@ -16,13 +15,9 @@ import type { LocalMessage, WireDataMessage } from './types';
 
 import './ConnectedView.css';
 
-export const ConnectedView: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = ({ peer, appState }, { onMount }) => {
+export const ConnectedView: Component = () => {
     const isConnected = calc(() => {
-        const state = appState.getState();
+        const state = svc('state').getState();
         return state.type === 'connected' && state.connected;
     });
     const chatMessages = collection<LocalMessage>([
@@ -39,11 +34,11 @@ export const ConnectedView: Component<{
 
     const localName = field('You');
     const peerName = field('Friend');
-    peer.onMessage((message) => {
+    svc('peer').onMessage((message) => {
         let parsed: unknown;
         try {
             parsed = JSON.parse(message);
-        } catch (e) {
+        } catch {
             return;
         }
         if (isWireRenameMessage(parsed)) {
@@ -76,10 +71,9 @@ export const ConnectedView: Component<{
             });
         }
     });
-    peer.onTrack((track, streams, tranceiver) => {
+    svc('peer').onTrack((track, streams, tranceiver) => {
         for (const stream of streams) {
             dynamicMediaStreams.addStream({
-                peer,
                 mediaStream: stream,
                 tranceiver,
                 isLocal: false,
@@ -161,7 +155,7 @@ export const ConnectedView: Component<{
                         name: newName,
                     };
                     chatMessages.push(localMessage);
-                    peer.send(JSON.stringify(wireMessage));
+                    svc('peer').send(JSON.stringify(wireMessage));
                 }}
                 onShareUserMedia={(mediaStream) => {
                     if (userMediaStream) {
@@ -176,11 +170,13 @@ export const ConnectedView: Component<{
                         const senders: RTCRtpSender[] = [];
                         for (const track of mediaStream.getTracks()) {
                             senders.push(
-                                peer.peerConnection.addTrack(track, mediaStream)
+                                svc('peer').peerConnection.addTrack(
+                                    track,
+                                    mediaStream
+                                )
                             );
                         }
                         dynamicMediaStreams.addStream({
-                            peer,
                             mediaStream,
                             senders,
                             isLocal: true,
@@ -201,7 +197,7 @@ export const ConnectedView: Component<{
                         msg,
                     };
                     chatMessages.push(localMessage);
-                    peer.send(JSON.stringify(wireMessage));
+                    svc('peer').send(JSON.stringify(wireMessage));
                 }}
             />
         </div>

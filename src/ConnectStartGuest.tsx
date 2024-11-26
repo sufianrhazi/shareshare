@@ -3,16 +3,11 @@ import type { Component } from '@srhazi/gooey';
 
 import { Button } from './Button';
 import { Buttons } from './Buttons';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
+import { svc } from './svc';
 import { assert } from './utils';
 
-export const ConnectStartGuest: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = ({ peer, appState }) => {
-    const state = appState.getState();
+export const ConnectStartGuest: Component = () => {
+    const state = svc('state').getState();
     assert(state.type === 'start_guest');
     return (
         <>
@@ -21,10 +16,11 @@ export const ConnectStartGuest: Component<{
                     <Button
                         primary
                         on:click={() => {
-                            appState.dispatch({
+                            svc('state').dispatch({
                                 event: 'accept_invitation',
                             });
-                            peer.accept(state.inviteMessage)
+                            svc('peer')
+                                .accept(state.inviteMessage)
                                 .then(() => {
                                     console.log('WHEN DOES THIS HAPPEN?');
                                 })
@@ -37,7 +33,7 @@ export const ConnectStartGuest: Component<{
                     </Button>
                     <Button
                         on:click={() => {
-                            appState.dispatch({
+                            svc('state').dispatch({
                                 event: 'reject_invitation',
                             });
                         }}

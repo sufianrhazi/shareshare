@@ -1,14 +1,7 @@
 import Gooey from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
-
-export const ConnectInviteRejected: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = () => {
+export const ConnectInviteRejected: Component = () => {
     return (
         <p>
             I get it, someone sent you a weird link. No worries, have a nice

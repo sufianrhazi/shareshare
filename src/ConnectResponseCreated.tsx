@@ -2,16 +2,11 @@ import Gooey from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
 import { CopyButton } from './CopyButton';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
+import { svc } from './svc';
 import { assert } from './utils';
 
-export const ConnectResponseCreated: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = ({ peer, appState }) => {
-    const state = appState.getState();
+export const ConnectResponseCreated: Component = () => {
+    const state = svc('state').getState();
     assert(state.type === 'response_created');
     return (
         <>
@@ -20,7 +15,7 @@ export const ConnectResponseCreated: Component<{
                     primary
                     data={state.responseMessage}
                     onCopy={() => {
-                        appState.dispatch({
+                        svc('state').dispatch({
                             event: 'copy_response',
                         });
                     }}

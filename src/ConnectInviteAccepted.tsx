@@ -3,16 +3,11 @@ import type { Component } from '@srhazi/gooey';
 
 import { Button } from './Button';
 import { LoadingIcon } from './LoadingIcon';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
+import { svc } from './svc';
 import { assert } from './utils';
 
-export const ConnectInviteAccepted: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = ({ peer, appState }) => {
-    const state = appState.getState();
+export const ConnectInviteAccepted: Component = () => {
+    const state = svc('state').getState();
     assert(state.type === 'invite_accepted');
     return (
         <>

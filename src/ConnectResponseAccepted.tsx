@@ -3,14 +3,8 @@ import type { Component } from '@srhazi/gooey';
 
 import { Button } from './Button';
 import { LoadingIcon } from './LoadingIcon';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
 
-export const ConnectResponseAccepted: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = () => {
+export const ConnectResponseAccepted: Component = () => {
     return (
         <>
             <p>

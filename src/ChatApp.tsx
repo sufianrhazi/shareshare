@@ -3,37 +3,15 @@ import type { Component } from '@srhazi/gooey';
 
 import { ChatContent } from './ChatContent';
 import type { CircleIconStatus } from './CircleIcon';
-import { Peer } from './Peer';
-import { StateMachine } from './StateMachine';
 import { SubwayStop } from './SubwayStop';
-import { makePromise } from './utils';
+import { svc } from './svc';
 
 import './ChatApp.css';
 
 export const ChatApp: Component = (props, { onMount }) => {
-    let responsePromise = makePromise<string>();
-    // TODO: should peer be split into a "host" and "guest" peer for ease of understanding?
-    const peer = new Peer((toSend) => {
-        switch (appState.getType()) {
-            case 'invite_creating':
-                appState.dispatch({
-                    event: 'create_invitation_ok',
-                    inviteMessage: toSend,
-                });
-                break;
-            case 'invite_accepted':
-                appState.dispatch({
-                    event: 'create_response',
-                    responseMessage: toSend,
-                });
-        }
-        responsePromise = makePromise<string>();
-        return responsePromise.promise;
-    });
+    const appState = svc('state');
 
-    const processResponse = (response: string) => {
-        responsePromise.resolve(response);
-    };
+    const peer = svc('peer');
 
     onMount(() => {
         peer.connectionState.subscribe((err, connectionState) => {
@@ -66,8 +44,6 @@ export const ChatApp: Component = (props, { onMount }) => {
             }
         });
     });
-
-    const appState = new StateMachine();
 
     const stepCreate = calc((): { status: CircleIconStatus } => {
         switch (appState.getType()) {
@@ -294,11 +270,7 @@ export const ChatApp: Component = (props, { onMount }) => {
                 )}
             </div>
             <div class="ChatApp_content">
-                <ChatContent
-                    processResponse={processResponse}
-                    peer={peer}
-                    appState={appState}
-                />
+                <ChatContent />
             </div>
             <div class="ChatApp_footer">
                 {calc(

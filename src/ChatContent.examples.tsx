@@ -2,16 +2,15 @@ import Gooey, { calc, mount } from '@srhazi/gooey';
 
 import { ChatContent } from './ChatContent';
 import { Example } from './Example';
-import { Peer } from './Peer';
-import { StateMachine } from './StateMachine';
 import type { StateMachineState } from './StateMachine';
+import { svc } from './svc';
+import { _testReset } from './svc.reset';
 
 import './ChatMain.scss';
 
-const peer = new Peer(() => {
-    throw new Error('nope');
-});
-const appState = new StateMachine();
+_testReset();
+
+const appState = svc('state');
 
 const allStates: { label: string; state: StateMachineState }[] = [
     {
@@ -97,9 +96,17 @@ const allStates: { label: string; state: StateMachineState }[] = [
         },
     },
     {
-        label: 'connected',
+        label: 'connected (connected)',
         state: {
             type: 'connected',
+            connected: true,
+        },
+    },
+    {
+        label: 'connected (disconnected)',
+        state: {
+            type: 'connected',
+            connected: false,
         },
     },
 ];
@@ -129,7 +136,7 @@ mount(
             ))}
         </Example>
         <Example title="ChatContent">
-            <ChatContent peer={peer} appState={appState} />
+            <ChatContent />
         </Example>
     </>
 );

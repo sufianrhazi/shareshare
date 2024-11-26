@@ -13,26 +13,21 @@ import { ConnectResponseCreated } from './ConnectResponseCreated';
 import { ConnectStartGuest } from './ConnectStartGuest';
 import { ConnectStartHost } from './ConnectStartHost';
 import { ContentSwitcher } from './ContentSwitcher';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
+import { svc } from './svc';
 
 import './ChatContent.css';
 
-export const ChatContent: Component<{
-    processResponse: (response: string) => void;
-    appState: StateMachine;
-    peer: Peer;
-}> = ({ processResponse, appState, peer }) => (
+export const ChatContent: Component = () => (
     <div
         class={classes('ChatContent', {
             'ChatContent-connected': calc(
-                () => appState.getType() === 'connected'
+                () => svc('state').getType() === 'connected'
             ),
         })}
     >
         <ContentSwitcher
-            value={appState.type}
-            args={{ processResponse, peer, appState }}
+            value={svc('state').type}
+            args={{}}
             content={{
                 error: ConnectError,
                 invite_created: ConnectInviteCreated,

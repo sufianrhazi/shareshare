@@ -2,28 +2,23 @@ import Gooey from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
 import { Button } from './Button';
-import type { Peer } from './Peer';
-import type { StateMachine } from './StateMachine';
+import { svc } from './svc';
 
-export const ConnectStartHost: Component<{
-    processResponse: (response: string) => void;
-    peer: Peer;
-    appState: StateMachine;
-}> = ({ peer, appState }) => {
+export const ConnectStartHost: Component = () => {
     return (
         <>
             <p>
                 <Button
                     primary
                     on:click={() => {
-                        appState.dispatch({
+                        svc('state').dispatch({
                             event: 'create_invitation',
                         });
                         try {
-                            peer.start();
+                            svc('peer').start();
                         } catch (e) {
                             console.error('Unable to create invitation', e);
-                            appState.dispatch({
+                            svc('state').dispatch({
                                 event: 'create_invitation_failed',
                             });
                         }

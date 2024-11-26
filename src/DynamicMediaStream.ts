@@ -2,18 +2,16 @@ import { calc, collection, field } from '@srhazi/gooey';
 import type { Calculation, Collection, Field } from '@srhazi/gooey';
 
 import { DynamicMediaStreamTrack } from './DynamicMediaStreamTrack';
-import type { Peer } from './Peer';
+import { svc } from './svc';
 
 export type DynamicMediaStreamProps =
     | {
           isLocal: true;
-          peer: Peer;
           mediaStream: MediaStream;
           senders: RTCRtpSender[];
       }
     | {
           isLocal: false;
-          peer: Peer;
           mediaStream: MediaStream;
           tranceiver: RTCRtpTransceiver;
       };
@@ -21,7 +19,6 @@ export type DynamicMediaStreamProps =
 export class DynamicMediaStream implements Disposable {
     public isLocal: boolean;
     private mediaStream: MediaStream;
-    public peer: Peer;
     public senders: undefined | RTCRtpSender[];
     public tranceiver: undefined | RTCRtpTransceiver;
     public dynamicTracks: Collection<DynamicMediaStreamTrack>;
@@ -30,7 +27,6 @@ export class DynamicMediaStream implements Disposable {
     public hasTracks: Calculation<boolean>;
 
     constructor(props: DynamicMediaStreamProps) {
-        this.peer = props.peer;
         this.isLocal = props.isLocal;
         this.mediaStream = props.mediaStream;
         this.senders = props.isLocal ? props.senders : undefined;
@@ -126,7 +122,7 @@ export class DynamicMediaStream implements Disposable {
         this.mediaStream.removeEventListener('removetrack', this.onRemoveTrack);
         if (this.senders) {
             for (const sender of this.senders) {
-                this.peer.peerConnection.removeTrack(sender);
+                svc('peer').peerConnection.removeTrack(sender);
             }
         }
         if (this.tranceiver) {

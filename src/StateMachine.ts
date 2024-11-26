@@ -1,6 +1,9 @@
 import { calc, field } from '@srhazi/gooey';
 import type { Field } from '@srhazi/gooey';
 
+import type { PromiseHandle } from './utils';
+import { makePromise } from './utils';
+
 export type StateMachineState =
     | { type: 'start_host' }
     | { type: 'invite_creating' }
@@ -53,11 +56,18 @@ function getInitialState(): StateMachineState {
 }
 
 export class StateMachine {
+    public peerResponsePromise: PromiseHandle<string>;
     private state: Field<StateMachineState>;
     public type = calc(() => this.state.get().type);
 
     constructor() {
         this.state = field(getInitialState());
+        // TODO: this is super awkward
+        this.peerResponsePromise = makePromise<string>();
+    }
+
+    processResponse(response: string) {
+        this.peerResponsePromise.resolve(response);
     }
 
     _testSetState(state: StateMachineState) {
