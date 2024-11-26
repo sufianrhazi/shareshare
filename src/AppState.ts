@@ -73,7 +73,7 @@ export class AppState implements Disposable {
     public fileSendQueue?: FileSendQueue;
 
     private state: Field<StateMachineState>;
-    public type = calc(() => this.state.get().type);
+    public activeView = calc(() => this.state.get().type);
     private peer?: PeerService;
     private unsubscribeConnectionState?: () => void;
     private unsubscribeMessage?: () => void;
@@ -187,10 +187,6 @@ export class AppState implements Disposable {
 
     _testSetState(state: StateMachineState) {
         this.state.set(state);
-    }
-
-    getType() {
-        return this.type.get();
     }
 
     getState() {
@@ -325,7 +321,7 @@ export class AppState implements Disposable {
             'invite_created',
             'invite_sent',
             'response_accepted',
-        ].includes(this.getType());
+        ].includes(this.activeView.get());
     });
 
     isGuest = calc(() => {
@@ -335,10 +331,10 @@ export class AppState implements Disposable {
             'invite_rejected',
             'response_created',
             'response_sent',
-        ].includes(this.getType());
+        ].includes(this.activeView.get());
     });
 
     isPaired = calc(() => {
-        return ['connected'].includes(this.getType());
+        return ['connected'].includes(this.activeView.get());
     });
 }

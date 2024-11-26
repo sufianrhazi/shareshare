@@ -6,7 +6,7 @@ import { makePromise } from './utils';
 
 export function init(): Promise<void> {
     const peer = new RealPeer((toSend) => {
-        switch (appState.getType()) {
+        switch (appState.activeView.get()) {
             case 'invite_creating':
                 appState.dispatch({
                     event: 'create_invitation_ok',

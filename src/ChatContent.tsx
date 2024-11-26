@@ -21,12 +21,12 @@ export const ChatContent: Component = () => (
     <div
         class={classes('ChatContent', {
             'ChatContent-connected': calc(
-                () => svc('state').getType() === 'connected'
+                () => svc('state').activeView.get() === 'connected'
             ),
         })}
     >
         <ContentSwitcher
-            value={svc('state').type}
+            value={svc('state').activeView}
             args={{}}
             content={{
                 error: ConnectError,

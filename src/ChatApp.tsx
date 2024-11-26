@@ -46,7 +46,7 @@ export const ChatApp: Component = (props, { onMount }) => {
     });
 
     const stepCreate = calc((): { status: CircleIconStatus } => {
-        switch (appState.getType()) {
+        switch (appState.activeView.get()) {
             case 'start_host':
                 return { status: 'info' };
             case 'invite_creating':
@@ -60,7 +60,7 @@ export const ChatApp: Component = (props, { onMount }) => {
         }
     });
     const stepInvite = calc((): { status: CircleIconStatus } => {
-        switch (appState.getType()) {
+        switch (appState.activeView.get()) {
             case 'start_host':
             case 'invite_creating':
                 return { status: 'info' };
@@ -75,7 +75,7 @@ export const ChatApp: Component = (props, { onMount }) => {
     });
 
     const stepAccept = calc((): { status: CircleIconStatus } => {
-        switch (appState.getType()) {
+        switch (appState.activeView.get()) {
             case 'start_guest':
                 return { status: 'info' };
             case 'invite_accepted':
@@ -89,7 +89,7 @@ export const ChatApp: Component = (props, { onMount }) => {
         }
     });
     const stepRespond = calc((): { status: CircleIconStatus } => {
-        switch (appState.getType()) {
+        switch (appState.activeView.get()) {
             case 'start_guest':
             case 'invite_accepted':
                 return { status: 'info' };
@@ -103,7 +103,7 @@ export const ChatApp: Component = (props, { onMount }) => {
         }
     });
     const stepConnect = calc((): { status: CircleIconStatus } => {
-        switch (appState.getType()) {
+        switch (appState.activeView.get()) {
             case 'start_host':
             case 'start_guest':
             case 'invite_accepted':
