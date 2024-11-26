@@ -170,10 +170,7 @@ export const ConnectedView: Component = () => {
                         const senders: RTCRtpSender[] = [];
                         for (const track of mediaStream.getTracks()) {
                             senders.push(
-                                svc('peer').peerConnection.addTrack(
-                                    track,
-                                    mediaStream
-                                )
+                                svc('peer').addTrack(track, mediaStream)
                             );
                         }
                         dynamicMediaStreams.addStream({

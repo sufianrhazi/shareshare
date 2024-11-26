@@ -122,7 +122,7 @@ export class DynamicMediaStream implements Disposable {
         this.mediaStream.removeEventListener('removetrack', this.onRemoveTrack);
         if (this.senders) {
             for (const sender of this.senders) {
-                svc('peer').peerConnection.removeTrack(sender);
+                svc('peer').removeTrack(sender);
             }
         }
         if (this.tranceiver) {

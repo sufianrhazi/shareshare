@@ -283,6 +283,14 @@ export class RealPeer implements PeerService {
         };
     }
 
+    addTrack(track: MediaStreamTrack, mediaStream: MediaStream): RTCRtpSender {
+        return this.peerConnection.addTrack(track, mediaStream);
+    }
+
+    removeTrack(sender: RTCRtpSender): void {
+        return this.peerConnection.removeTrack(sender);
+    }
+
     onChannelMessage: PeerChannelHandler = (error, message) => {
         if (error) {
             console.error(

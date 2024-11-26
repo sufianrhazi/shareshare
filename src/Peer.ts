@@ -33,10 +33,6 @@ export interface PeerService {
     handler: (toSend: string) => Promise<string>;
     channel: Field<PeerChannel | undefined>;
 
-    messageHandlers: Set<PeerMessageHandler>;
-    trackHandlers: Set<PeerTrackHandler>;
-
-    peerConnection: RTCPeerConnection;
     connectionState: Field<RTCPeerConnectionState>;
     iceConnectionState: Field<RTCIceConnectionState>;
     iceGatheringState: Field<RTCIceGatheringState>;
@@ -54,6 +50,13 @@ export interface PeerService {
     onMessage: (handler: PeerMessageHandler) => () => void;
 
     onTrack: (handler: PeerTrackHandler) => () => void;
+
+    addTrack: (
+        track: MediaStreamTrack,
+        mediaStream: MediaStream
+    ) => RTCRtpSender;
+
+    removeTrack: (sender: RTCRtpSender) => void;
 
     onChannelMessage: PeerChannelHandler;
 
