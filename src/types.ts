@@ -11,6 +11,14 @@ export const isWireRenameMessage = isShape({
     sent: isNumber,
     name: isString,
 });
+export const isWireSendFile = isShape({
+    type: isExact('name'),
+    sent: isNumber,
+    fileName: isString,
+    contentType: isString,
+    length: isNumber,
+    content: isString,
+});
 export const isWireDataMessage = isEither(
     isWireChatMessage,
     isWireRenameMessage
@@ -48,9 +56,19 @@ export const isDirectionalMessage = isEither(
     isChatRenameMessage
 );
 
+export const isFileMessage = isShape({
+    type: isExact('file'),
+    sent: isNumber,
+    from: isEither(isExact('you'), isExact('peer')),
+    fileName: isString,
+    length: isNumber,
+    content: isString,
+});
+
 export const isLocalMessage = isEither(
     isChatMessage,
     isChatRenameMessage,
+    isFileMessage,
     isInitialMessage,
     isDisconnectMessage
 );

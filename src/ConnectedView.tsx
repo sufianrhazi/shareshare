@@ -7,7 +7,11 @@ import { ConnectedMessages } from './ConnectedMessages';
 import { DynamicMediaStreams } from './DynamicMediaStreams';
 import type { Peer } from './Peer';
 import type { StateMachine } from './StateMachine';
-import { isWireChatMessage, isWireRenameMessage } from './types';
+import {
+    isWireChatMessage,
+    isWireRenameMessage,
+    isWireSendFile,
+} from './types';
 import type { LocalMessage, WireDataMessage } from './types';
 
 import './ConnectedView.css';
@@ -61,6 +65,16 @@ export const ConnectedView: Component<{
                 msg: parsed.msg,
             });
         }
+        if (isWireSendFile(parsed)) {
+            chatMessages.push({
+                type: 'file',
+                from: 'peer',
+                sent: parsed.sent,
+                fileName: parsed.fileName,
+                length: parsed.length,
+                content: parsed.content,
+            });
+        }
     });
     peer.onTrack((track, streams, tranceiver) => {
         for (const stream of streams) {
@@ -73,8 +87,48 @@ export const ConnectedView: Component<{
         }
     });
 
+    const isDraggingFile = field(false);
+    const onDragOver = (e: DragEvent) => {
+        if (e.dataTransfer) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            e.dataTransfer.effectAllowed = 'copy';
+            isDraggingFile.set(true);
+        }
+    };
+    const onDragLeave = (e: DragEvent) => {
+        isDraggingFile.set(false);
+    };
+
+    const onDrop = (e: DragEvent) => {
+        if (e.dataTransfer) {
+            isDraggingFile.set(false);
+            e.preventDefault();
+            for (const file of Array.from(e.dataTransfer.files)) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                // TODO: send the file
+                console.log('TO SEND', file);
+            }
+        }
+    };
+
     return (
-        <div class="ConnectedView">
+        <div
+            on:dragenter={onDragOver}
+            on:dragover={onDragOver}
+            on:dragleave={onDragLeave}
+            on:drop={onDrop}
+            class="ConnectedView"
+        >
+            {calc(
+                () =>
+                    isDraggingFile.get() && (
+                        <div class="ConnectedView_dropTarget">
+                            <div>Drop to share files</div>
+                        </div>
+                    )
+            )}
             <ConnectedMedia
                 class="ConnectedView_media"
                 dynamicMediaStreams={dynamicMediaStreams}
