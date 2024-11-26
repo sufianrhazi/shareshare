@@ -16,7 +16,7 @@ interface FileSendQueueItem {
 // - Upload them one by one to the peer in <16k messages
 // - Recipients need to ack each message?
 // - Chat messages need to have a placeholder for the sent/received files
-class FileSendQueue {
+export class FileSendQueue {
     queue: Collection<FileSendQueueItem>;
 
     constructor() {

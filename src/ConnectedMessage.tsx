@@ -85,6 +85,30 @@ export const ConnectedMessage: Component<{
             );
             break;
         }
+        case 'file': {
+            // TODO: actually render a the uploaded file and show progress
+            content =
+                message.from === 'you' ? (
+                    <>
+                        <Timestamp
+                            class="ConnectedMessage_ts"
+                            time={Date.now()}
+                        />{' '}
+                        Sending {message.fileName} (
+                        {message.length.toLocaleString()} bytes)...
+                    </>
+                ) : (
+                    <>
+                        <Timestamp
+                            class="ConnectedMessage_ts"
+                            time={Date.now()}
+                        />{' '}
+                        Receiving {message.fileName} (
+                        {message.length.toLocaleString()} bytes)...
+                    </>
+                );
+            break;
+        }
         default:
             assertExhausted(message);
     }
