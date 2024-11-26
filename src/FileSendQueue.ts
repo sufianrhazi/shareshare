@@ -175,10 +175,10 @@ class FileSendHandle {
 }
 
 // Responsibility:
-// - Accept a queue of files
-// - Upload them one by one to the peer in <16k messages
-// - Recipients need to ack each message?
-// - Chat messages need to have a placeholder for the sent/received files
+// - [x] Accept a queue of files
+// - [x] Upload them one by one to the peer in <16k messages
+// - [x] Recipients need to ack each message?
+// - [ ] Chat messages need to have a placeholder for the sent/received files
 export class FileSendQueue implements Disposable {
     public queue: Collection<FileSendQueueItem>;
     private connected: boolean;

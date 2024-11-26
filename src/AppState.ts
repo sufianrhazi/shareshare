@@ -174,7 +174,7 @@ export class AppState implements Disposable {
         this.unsubscribeConnectionState?.();
         this.unsubscribeMessage?.();
         this.unsubscribeTrack?.();
-        this.fileSendQueue.dispose();
+        this.fileSendQueue?.dispose();
     }
 
     [Symbol.dispose]() {

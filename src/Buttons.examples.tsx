@@ -3,8 +3,11 @@ import Gooey, { mount } from '@srhazi/gooey';
 import { Button } from './Button';
 import { Buttons } from './Buttons';
 import { Example } from './Example';
+import { _testReset } from './svc.reset';
 
 import './ChatMain.scss';
+
+_testReset();
 
 mount(
     document.body,

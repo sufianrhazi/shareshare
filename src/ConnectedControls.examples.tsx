@@ -2,11 +2,12 @@ import Gooey, { collection, field, mount } from '@srhazi/gooey';
 
 import { ConnectedControls } from './ConnectedControls';
 import { Example } from './Example';
+import { _testReset } from './svc.reset';
 
 import './ChatMain.scss';
 
-const localName = field('alice');
-const peerName = field('bob');
+_testReset();
+
 const isConnected = field(true);
 const events = collection(['events go here']);
 mount(
@@ -15,8 +16,6 @@ mount(
         <Example title="Controls">
             <ConnectedControls
                 isConnected={isConnected}
-                localName={localName}
-                peerName={peerName}
                 onRename={(newName) => {
                     events.push(`rename: ${newName}`);
                 }}

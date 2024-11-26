@@ -3,10 +3,12 @@ import Gooey, { calc, field, mount } from '@srhazi/gooey';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
 import { Example } from './Example';
+import { _testReset } from './svc.reset';
 import { TextArea } from './TextArea';
 
 import './ChatMain.scss';
 
+_testReset();
 const text = field<string>('initial text');
 const disabled = field(false);
 const readonly = field(false);

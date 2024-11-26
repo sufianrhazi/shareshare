@@ -2,10 +2,12 @@ import Gooey, { calc, field, mount } from '@srhazi/gooey';
 
 import { Example } from './Example';
 import { MediaPicker } from './MediaPicker';
+import { _testReset } from './svc.reset';
 import { assertResolves } from './utils';
 
 import './ChatMain.scss';
 
+_testReset();
 const userMedia = field<MediaStream | undefined>(undefined);
 
 mount(

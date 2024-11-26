@@ -18,6 +18,7 @@ export const ConnectedMessage: Component<{
     { class: className, message, onMount: onComponentMount },
     { onMount }
 ) => {
+    console.log('RENDERING', message);
     if (onComponentMount) {
         onMount(onComponentMount);
     }

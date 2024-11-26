@@ -1,9 +1,12 @@
 import Gooey, { mount } from '@srhazi/gooey';
 
 import { Example } from './Example';
+import { _testReset } from './svc.reset';
 import { Timestamp } from './Timestamp';
 
 import './ChatMain.scss';
+
+_testReset();
 
 mount(
     document.body,

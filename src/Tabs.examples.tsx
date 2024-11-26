@@ -1,11 +1,15 @@
 import Gooey, { field, mount } from '@srhazi/gooey';
 
 import { Example } from './Example';
+import { _testReset } from './svc.reset';
 import { Tabs } from './Tabs';
 
 import './ChatMain.scss';
 
+_testReset();
+
 type Tabs = 'one' | 'two' | 'three' | 'four' | 'five';
+
 const active = field<Tabs>('one');
 
 mount(

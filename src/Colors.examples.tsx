@@ -11,8 +11,11 @@ import { Button } from './Button';
 import { Example } from './Example';
 import { Modal } from './Modal';
 import { isArray, isEither, isExact, isShape, isString } from './shape';
+import { _testReset } from './svc.reset';
 
 import './ChatMain.scss';
+
+_testReset();
 
 const COLORS = [
     'gray',
