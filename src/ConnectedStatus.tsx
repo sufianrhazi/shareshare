@@ -12,8 +12,9 @@ export const ConnectedStatus: Component<{
         <div class={`${className} ConnectedStatus`}>
             Connection: <code>{svc('peer').connectionState}</code>; Channel:{' '}
             <code>
-                {calc(() => svc('peer').channel.get()?.readyState.get()) ??
-                    'no channel'}
+                {calc(
+                    () => svc('peer').channelReadyState.get() ?? 'no channel'
+                )}
             </code>
         </div>
     );

@@ -1,12 +1,7 @@
-import { field } from '@srhazi/gooey';
-import type { Field } from '@srhazi/gooey';
+import { calc, field } from '@srhazi/gooey';
+import type { Calculation, Field } from '@srhazi/gooey';
 
-import type {
-    PeerChannel,
-    PeerChannelHandler,
-    PeerChannelSpecialHandler,
-    PeerService,
-} from './Peer';
+import type { PeerService } from './Peer';
 import type {
     ChannelMessage,
     ChannelSpecialMessage,
@@ -23,7 +18,17 @@ import {
 import type { CheckType } from './shape';
 import { assert, assertResolves, makePromise, wrapError } from './utils';
 
-export class RealPeerChannel implements PeerChannel {
+export type PeerChannelHandler = (
+    ...args:
+        | [error: Error, message: undefined]
+        | [error: undefined, message: string]
+) => void;
+
+export type PeerChannelSpecialHandler = (
+    message: ChannelSpecialMessage
+) => void;
+
+export class PeerChannel {
     private channel: RTCDataChannel;
     private handler: PeerChannelHandler;
     private specialHandler: PeerChannelSpecialHandler;
@@ -104,6 +109,7 @@ type PeerRenegotiatingState = undefined | 'renegotiate-sent';
 export class RealPeer implements PeerService {
     handler: (toSend: string) => Promise<string>;
     channel: Field<PeerChannel | undefined>;
+    channelReadyState: Calculation<RTCDataChannelState | null>;
 
     messageHandlers: Set<PeerMessageHandler>;
     trackHandlers: Set<PeerTrackHandler>;
@@ -133,6 +139,9 @@ export class RealPeer implements PeerService {
         this.handler = handler;
         this.peerConnection = new RTCPeerConnection(options);
         this.channel = field(undefined);
+        this.channelReadyState = calc(() => {
+            return this.channel.get()?.readyState.get() ?? null;
+        });
         this.connectionState = field(this.peerConnection.connectionState);
         this.iceConnectionState = field(this.peerConnection.iceConnectionState);
         this.iceGatheringState = field(this.peerConnection.iceGatheringState);
@@ -169,7 +178,7 @@ export class RealPeer implements PeerService {
         this.peerConnection.addEventListener('datachannel', (e) => {
             console.log('client datachannel', e.channel);
             assert(!this.channel.get(), 'got multiple channels!');
-            const peerChannel = new RealPeerChannel(
+            const peerChannel = new PeerChannel(
                 e.channel,
                 this.onChannelMessage,
                 this.onChannelSpecialMessage
@@ -317,7 +326,7 @@ export class RealPeer implements PeerService {
     }
 
     start() {
-        const peerChannel = new RealPeerChannel(
+        const peerChannel = new PeerChannel(
             this.peerConnection.createDataChannel('main'),
             this.onChannelMessage,
             this.onChannelSpecialMessage
