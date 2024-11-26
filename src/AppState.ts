@@ -2,6 +2,7 @@ import { calc, collection, field } from '@srhazi/gooey';
 import type { Collection, Field } from '@srhazi/gooey';
 
 import { DynamicMediaStreams } from './DynamicMediaStreams';
+import { FileSendQueue } from './FileSendQueue';
 import type { PeerService } from './Peer';
 import {
     isWireChatMessage,
@@ -69,6 +70,7 @@ export class AppState implements Disposable {
     public chatMessages: Collection<LocalMessage>;
     public localName: Field<string>;
     public peerName: Field<string>;
+    public fileSendQueue?: FileSendQueue;
 
     private state: Field<StateMachineState>;
     public type = calc(() => this.state.get().type);
@@ -87,6 +89,7 @@ export class AppState implements Disposable {
         this.chatMessages = collection([]);
         this.localName = field('You');
         this.peerName = field('Friend');
+        this.fileSendQueue = undefined;
 
         this.peer = undefined;
         this.unsubscribeConnectionState = undefined;
@@ -97,6 +100,7 @@ export class AppState implements Disposable {
     setPeer(peer: PeerService) {
         assert(!this.peer, 'Must set peer only once');
         this.peer = peer;
+        this.fileSendQueue = new FileSendQueue(peer);
         let isConnected = false;
         this.unsubscribeConnectionState = this.peer.connectionState.subscribe(
             (err, connectionState) => {
@@ -170,6 +174,7 @@ export class AppState implements Disposable {
         this.unsubscribeConnectionState?.();
         this.unsubscribeMessage?.();
         this.unsubscribeTrack?.();
+        this.fileSendQueue.dispose();
     }
 
     [Symbol.dispose]() {
