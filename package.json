@@ -9,7 +9,7 @@
         "url": "https://git.abstract.properties/private/shareshare.git"
     },
     "dependencies": {
-        "@srhazi/gooey": "0.18.2"
+        "@srhazi/gooey": "0.18.3"
     },
     "devDependencies": {
         "@ianvs/prettier-plugin-sort-imports": "^4.2.1",

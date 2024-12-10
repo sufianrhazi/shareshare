@@ -1,17 +1,78 @@
 import { calc, collection, field } from '@srhazi/gooey';
 import type { Collection, Field } from '@srhazi/gooey';
 
+import { base64ToBytes, bytesToBase64 } from './base64';
 import { DynamicMediaStreams } from './DynamicMediaStreams';
-import { FileSendQueue } from './FileSendQueue';
 import type { PeerService } from './Peer';
 import {
     isWireChatMessage,
+    isWireMessage,
     isWireRenameMessage,
-    isWireSendFile,
+    isWireSendFileAccept,
+    isWireSendFileCancel,
+    isWireSendFileChunk,
+    isWireSendFileChunkAck,
+    isWireSendFileReject,
+    isWireSendFileRequest,
 } from './types';
-import type { LocalMessage } from './types';
+import type { LocalMessage, WireMessage } from './types';
 import type { PromiseHandle } from './utils';
-import { assert, makePromise } from './utils';
+import { assert, assertExhausted, makePromise } from './utils';
+
+// The maximum WebRTC message size is ~16 Kb; see http://viblast.com/blog/2015/2/5/webrtc-data-channel-message-size/
+const FILE_CHUNK_SIZE = 1024 * 8;
+
+// ReadableStream[Symbol.asyncIterator] is not implemented in Safari
+// Adapted from https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/65542#discussioncomment-6071004
+async function* makeAsyncStreamIterator<T>(stream: ReadableStream<T>) {
+    const reader = stream.getReader();
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) return;
+            yield value;
+        }
+    } finally {
+        reader.releaseLock();
+    }
+}
+async function* makeChunkedStreamIterator(stream: ReadableStream<Uint8Array>) {
+    const asyncIterator = makeAsyncStreamIterator(stream);
+
+    const buffer = new Uint8Array(FILE_CHUNK_SIZE);
+    let cIndex = 0;
+    let bIndex = 0;
+    let chunk: undefined | Uint8Array;
+
+    while (true) {
+        // If our chunk is fully read (or this is our first iteration), read the next chunk
+        if (!chunk || cIndex >= chunk.length) {
+            const result = await asyncIterator.next();
+            if (result.done) {
+                // If we're done and we have a pending buffer, return the remaining buffer
+                if (bIndex >= 0) {
+                    yield buffer.slice(0, bIndex);
+                }
+                return;
+            }
+            chunk = result.value;
+            cIndex = 0;
+        }
+        // Read from the chunk into the buffer until either is filled
+        for (
+            ;
+            cIndex < chunk.length && bIndex < buffer.length;
+            ++cIndex, ++bIndex
+        ) {
+            buffer[bIndex] = chunk[cIndex];
+        }
+        // If our buffer is filled, flush it
+        if (bIndex >= buffer.length) {
+            yield buffer;
+            bIndex = 0;
+        }
+    }
+}
 
 export type StateMachineState =
     | { type: 'start_host' }
@@ -64,13 +125,48 @@ function getInitialState(): StateMachineState {
     return { type: 'start_host' };
 }
 
+export type SentFileStateStatus =
+    | 'requested'
+    | 'accepted'
+    | 'rejected'
+    | 'cancelled'
+    | 'sending'
+    | 'sent';
+
+export type SentFileState = {
+    id: string;
+    status: Field<SentFileStateStatus>;
+    ackOffset: Field<number>;
+    sendOffset: Field<number>;
+    file: File;
+    asyncIterator: AsyncGenerator<Uint8Array, void, unknown>;
+};
+
+export type ReceivedFileStateStatus =
+    | 'requested'
+    | 'accepted'
+    | 'rejected'
+    | 'cancelled'
+    | 'receiving'
+    | 'received';
+
+export type ReceivedFileState = {
+    id: string;
+    name: string;
+    mimeType: string;
+    size: number;
+    status: Field<ReceivedFileStateStatus>;
+    contents: Field<undefined | Uint8Array>;
+    lastOffset: Field<number>;
+    chunks: string[];
+};
+
 export class AppState implements Disposable {
     public peerResponsePromise: PromiseHandle<string>;
     public dynamicMediaStreams: DynamicMediaStreams;
     public chatMessages: Collection<LocalMessage>;
     public localName: Field<string>;
     public peerName: Field<string>;
-    public fileSendQueue?: FileSendQueue;
 
     private state: Field<StateMachineState>;
     public activeView = calc(() => this.state.get().type);
@@ -78,6 +174,9 @@ export class AppState implements Disposable {
     private unsubscribeConnectionState?: () => void;
     private unsubscribeMessage?: () => void;
     private unsubscribeTrack?: () => void;
+    private sentFileToStateId: Map<File, string>;
+    private sentStateIdToFileState: Map<string, SentFileState>;
+    private receivedStateIdToFileState: Map<string, ReceivedFileState>;
 
     constructor() {
         // TODO: this is super awkward; the way the state and peer are coupled is not good
@@ -89,18 +188,203 @@ export class AppState implements Disposable {
         this.chatMessages = collection([]);
         this.localName = field('You');
         this.peerName = field('Friend');
-        this.fileSendQueue = undefined;
 
         this.peer = undefined;
         this.unsubscribeConnectionState = undefined;
         this.unsubscribeMessage = undefined;
         this.unsubscribeTrack = undefined;
+        this.sentFileToStateId = new Map();
+        this.sentStateIdToFileState = new Map();
+        this.receivedStateIdToFileState = new Map();
+    }
+
+    getReceivedFileState(id: string) {
+        return this.receivedStateIdToFileState.get(id);
+    }
+
+    getSentFileState(id: string) {
+        return this.sentStateIdToFileState.get(id);
+    }
+
+    acceptFile(id: string) {
+        const receivedFileState = this.receivedStateIdToFileState.get(id);
+        assert(receivedFileState, 'Unable to accept file that does not exist');
+        const status = receivedFileState.status.get();
+        assert(
+            status === 'requested',
+            'Unable to accept file that is not requested',
+            {
+                id,
+                status,
+                receivedFileState,
+            }
+        );
+        receivedFileState.status.set('accepted');
+        this.sendWireMessage({
+            type: 'file_send_accept',
+            sent: Date.now(),
+            id,
+        });
+    }
+
+    rejectFile(id: string) {
+        const receivedFileState = this.receivedStateIdToFileState.get(id);
+        assert(receivedFileState, 'Unable to reject file that does not exist');
+        const status = receivedFileState.status.get();
+        assert(
+            status === 'requested' || status === 'receiving',
+            'Unable to reject file that is not requested/receiving',
+            {
+                id,
+                status,
+                receivedFileState,
+            }
+        );
+        receivedFileState.status.set('rejected');
+        this.sendWireMessage({
+            type: 'file_send_reject',
+            sent: Date.now(),
+            id,
+        });
+    }
+
+    cancelFile(id: string) {
+        const sentFileState = this.sentStateIdToFileState.get(id);
+        assert(sentFileState, 'Unable to reject file that does not exist');
+        const status = sentFileState.status.get();
+        assert(
+            status === 'requested' ||
+                status === 'accepted' ||
+                status === 'sending',
+            'Unable to reject file that is not requested/accepted/sending',
+            {
+                id,
+                status,
+                sentFileState,
+            }
+        );
+        sentFileState.status.set('cancelled');
+        this.sendWireMessage({
+            type: 'file_send_cancel',
+            sent: Date.now(),
+            id,
+        });
+    }
+
+    sendMessage(message: string) {
+        assert(this.peer, 'Cannot send message without peer');
+        const when = Date.now();
+        const localMessage: LocalMessage = {
+            type: 'chat',
+            sent: when,
+            from: 'you',
+            msg: message,
+        };
+        this.chatMessages.push(localMessage);
+        this.sendWireMessage({
+            type: 'chat',
+            sent: when,
+            msg: message,
+        });
+    }
+
+    sendWireMessage(message: WireMessage) {
+        assert(this.peer, 'Cannot send message without peer');
+        this.peer.send(JSON.stringify(message));
+    }
+
+    sendFile(file: File) {
+        const stream = file.stream();
+        const asyncIterator = makeChunkedStreamIterator(stream);
+        assert(this.peer, 'Cannot send file without peer');
+        const when = Date.now();
+        const id = JSON.stringify({ name: file.name, when: when });
+        this.sentFileToStateId.set(file, id);
+        const fileState: SentFileState = {
+            id,
+            status: field('requested'),
+            ackOffset: field(0),
+            sendOffset: field(0),
+            file,
+            asyncIterator,
+        };
+        this.sentStateIdToFileState.set(id, fileState);
+        const localMessage: LocalMessage = {
+            type: 'file_send',
+            sent: when,
+            from: 'you',
+            id: fileState.id,
+        };
+        this.chatMessages.push(localMessage);
+        this.sendWireMessage({
+            type: 'file_send',
+            sent: when,
+            id,
+            name: file.name,
+            mimeType: file.type,
+            size: file.size,
+        });
+    }
+
+    private async sendNextFileChunk(sentFileState: SentFileState) {
+        assert(this.peer, 'Cannot send file chunk without peer');
+        const status = sentFileState.status.get();
+        if (status === 'rejected') {
+            // File has been rejected by peer, stop sending
+            return;
+        }
+        assert(
+            status === 'accepted' || status === 'sending',
+            'Sent file in unexpected state',
+            {
+                status,
+                sentFileState,
+            }
+        );
+        const ackOffset = sentFileState.ackOffset.get();
+        const sendOffset = sentFileState.sendOffset.get();
+        assert(
+            ackOffset === sendOffset,
+            'Offset mismatch, expected file chunk ack offset to be send offset',
+            {
+                ackOffset,
+                sendOffset,
+                sentFileState,
+            }
+        );
+        if (status !== 'sending') {
+            sentFileState.status.set('sending');
+        }
+        const result = await sentFileState.asyncIterator.next();
+        if (result.done) {
+            assert(
+                sendOffset === sentFileState.file.size,
+                'Unexpected end of file!',
+                {
+                    ackOffset,
+                    sendOffset,
+                    sentFileState,
+                }
+            );
+            sentFileState.status.set('sent');
+            return;
+        }
+        const endOffset = sendOffset + result.value.length;
+        sentFileState.sendOffset.set(endOffset);
+        const encoded = bytesToBase64(result.value);
+        this.sendWireMessage({
+            type: 'file_send_chunk',
+            id: sentFileState.id,
+            sent: Date.now(),
+            data: encoded,
+            end: endOffset,
+            offset: ackOffset,
+        });
     }
 
     setPeer(peer: PeerService) {
         assert(!this.peer, 'Must set peer only once');
         this.peer = peer;
-        this.fileSendQueue = new FileSendQueue(peer);
         let isConnected = false;
         this.unsubscribeConnectionState = this.peer.connectionState.subscribe(
             (err, connectionState) => {
@@ -129,34 +413,163 @@ export class AppState implements Disposable {
             } catch {
                 return;
             }
-            if (isWireRenameMessage(parsed)) {
-                const priorName = this.peerName.get();
-                this.peerName.set(parsed.name);
-                this.chatMessages.push({
-                    type: 'name',
-                    from: 'peer',
-                    sent: parsed.sent,
-                    priorName,
-                    name: parsed.name,
-                });
-            }
-            if (isWireChatMessage(parsed)) {
-                this.chatMessages.push({
-                    type: 'chat',
-                    from: 'peer',
-                    sent: parsed.sent,
-                    msg: parsed.msg,
-                });
-            }
-            if (isWireSendFile(parsed)) {
-                this.chatMessages.push({
-                    type: 'file',
-                    from: 'peer',
-                    sent: parsed.sent,
-                    fileName: parsed.fileName,
-                    length: parsed.length,
-                    content: parsed.content,
-                });
+            if (isWireMessage(parsed)) {
+                if (isWireRenameMessage(parsed)) {
+                    const priorName = this.peerName.get();
+                    this.peerName.set(parsed.name);
+                    this.chatMessages.push({
+                        type: 'name',
+                        from: 'peer',
+                        sent: parsed.sent,
+                        priorName,
+                        name: parsed.name,
+                    });
+                } else if (isWireChatMessage(parsed)) {
+                    this.chatMessages.push({
+                        type: 'chat',
+                        from: 'peer',
+                        sent: parsed.sent,
+                        msg: parsed.msg,
+                    });
+                } else if (isWireSendFileRequest(parsed)) {
+                    this.receivedStateIdToFileState.set(parsed.id, {
+                        id: parsed.id,
+                        name: parsed.name,
+                        mimeType: parsed.mimeType,
+                        size: parsed.size,
+                        chunks: [],
+                        status: field('requested'),
+                        contents: field(undefined),
+                        lastOffset: field(0),
+                    });
+                    this.chatMessages.push({
+                        type: 'file_recv',
+                        sent: parsed.sent,
+                        from: 'peer',
+                        id: parsed.id,
+                    });
+                } else if (isWireSendFileAccept(parsed)) {
+                    const sentFileState = this.sentStateIdToFileState.get(
+                        parsed.id
+                    );
+                    assert(
+                        sentFileState,
+                        'Got a file accept for a sent id that does not exist'
+                    );
+                    sentFileState.status.set('accepted');
+                    this.sendNextFileChunk(sentFileState).catch((e) => {
+                        console.error(
+                            'Error received when sending next file chunk',
+                            e
+                        );
+                    });
+                } else if (isWireSendFileReject(parsed)) {
+                    const sentFileState = this.sentStateIdToFileState.get(
+                        parsed.id
+                    );
+                    assert(
+                        sentFileState,
+                        'Got a file accept for a sent id that does not exist'
+                    );
+                    sentFileState.status.set('rejected');
+                } else if (isWireSendFileCancel(parsed)) {
+                    const receivedFileState =
+                        this.receivedStateIdToFileState.get(parsed.id);
+                    assert(
+                        receivedFileState,
+                        'Got a file cancel for a received file that does not exist'
+                    );
+                    receivedFileState.status.set('cancelled');
+                } else if (isWireSendFileChunk(parsed)) {
+                    const receivedFileState =
+                        this.receivedStateIdToFileState.get(parsed.id);
+                    assert(
+                        receivedFileState,
+                        'Got a file chunk for a received file that does not exist'
+                    );
+                    const status = receivedFileState.status.get();
+                    assert(
+                        status === 'accepted' || status === 'receiving',
+                        'Got a file chunk when file in incorrect state',
+                        {
+                            status,
+                            receivedFileState,
+                        }
+                    );
+                    if (status !== 'receiving') {
+                        receivedFileState.status.set('receiving');
+                    }
+                    const lastOffset = receivedFileState.lastOffset.get();
+                    assert(
+                        lastOffset === parsed.offset,
+                        'Got out of order file chunk',
+                        {
+                            receivedFileState,
+                            lastOffset,
+                            parsed,
+                        }
+                    );
+                    receivedFileState.chunks.push(parsed.data);
+                    receivedFileState.lastOffset.set(parsed.end);
+                    this.sendWireMessage({
+                        type: 'file_send_chunk_ack',
+                        sent: Date.now(),
+                        id: parsed.id,
+                        end: parsed.end,
+                    });
+                    if (parsed.end >= receivedFileState.size) {
+                        const contents = new Uint8Array(receivedFileState.size);
+                        let offset = 0;
+                        for (const chunk of receivedFileState.chunks) {
+                            const decoded = base64ToBytes(chunk);
+                            contents.set(decoded, offset);
+                            offset += decoded.length;
+                        }
+                        receivedFileState.status.set('received');
+                        receivedFileState.contents.set(contents);
+                    }
+                } else if (isWireSendFileChunkAck(parsed)) {
+                    const sentFileState = this.sentStateIdToFileState.get(
+                        parsed.id
+                    );
+                    assert(
+                        sentFileState,
+                        'Got file chunk ack for sent file that does not exist'
+                    );
+                    const status = sentFileState.status.get();
+                    assert(
+                        status === 'sending',
+                        'Got file chunk ack for sent file in wrong status',
+                        {
+                            sentFileState,
+                            status,
+                            parsed,
+                        }
+                    );
+                    const ackOffset = sentFileState.ackOffset.get();
+                    const sendOffset = sentFileState.sendOffset.get();
+                    assert(
+                        sendOffset === parsed.end,
+                        'Got out of order file chunk ack',
+                        {
+                            sentFileState,
+                            ackOffset,
+                            sendOffset,
+                            parsed,
+                        }
+                    );
+                    sentFileState.ackOffset.set(parsed.end);
+                    this.sendNextFileChunk(sentFileState).catch((e) => {
+                        console.error(
+                            'Error received when sending next file chunk',
+                            e
+                        );
+                    });
+                } else {
+                    assertExhausted(parsed);
+                }
+            } else {
+                console.log('UNEXPECTED WIRE MESSAGE', parsed);
             }
         });
         this.unsubscribeTrack = peer.onTrack((track, streams, tranceiver) => {
@@ -174,7 +587,6 @@ export class AppState implements Disposable {
         this.unsubscribeConnectionState?.();
         this.unsubscribeMessage?.();
         this.unsubscribeTrack?.();
-        this.fileSendQueue?.dispose();
     }
 
     [Symbol.dispose]() {

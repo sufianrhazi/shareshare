@@ -1,14 +1,70 @@
-import Gooey from '@srhazi/gooey';
+import Gooey, { calc } from '@srhazi/gooey';
 import type { Component } from '@srhazi/gooey';
 
+import { Button } from './Button';
+import { Buttons } from './Buttons';
 import { classes } from './classes';
 import { svc } from './svc';
 import { Timestamp } from './Timestamp';
 import type { LocalMessage } from './types';
 import { isDirectionalMessage } from './types';
-import { assertExhausted } from './utils';
+import { assert, assertExhausted } from './utils';
 
 import './ConnectedMessage.css';
+
+const FilePreview: Component<{
+    blob: Blob;
+    name: string;
+    mimeType: string;
+    size: number;
+    showDownload?: boolean;
+}> = ({ blob, name, mimeType, size, showDownload }) => {
+    const url = URL.createObjectURL(blob);
+    if (mimeType.startsWith('image/')) {
+        return <img title={name} src={url} />;
+    }
+    if (mimeType.startsWith('video/')) {
+        return (
+            <video title={name} controls muted autoplay loop src={url}>
+                <source src={url} type={mimeType} />
+            </video>
+        );
+    }
+    if (mimeType.startsWith('audio/')) {
+        return (
+            <audio title={name} controls loop>
+                <source src={url} type={mimeType} />
+            </audio>
+        );
+    }
+    return (
+        <>
+            file
+            <FileToken name={name} mimeType={mimeType} size={size} />
+            {showDownload && (
+                <>
+                    {' '}
+                    <a href={url} download={name}>
+                        Save
+                    </a>
+                </>
+            )}
+        </>
+    );
+};
+
+const FileToken: Component<{
+    name: string;
+    mimeType: string;
+    size: number;
+}> = ({ name, mimeType, size }) => {
+    return (
+        <>
+            <code>{name}</code> (<code>{mimeType}</code>,{' '}
+            <strong>{size.toLocaleString()}</strong> bytes)
+        </>
+    );
+};
 
 export const ConnectedMessage: Component<{
     class?: string | undefined;
@@ -18,7 +74,6 @@ export const ConnectedMessage: Component<{
     { class: className, message, onMount: onComponentMount },
     { onMount }
 ) => {
-    console.log('RENDERING', message);
     if (onComponentMount) {
         onMount(onComponentMount);
     }
@@ -83,28 +138,331 @@ export const ConnectedMessage: Component<{
             );
             break;
         }
-        case 'file': {
-            // TODO: actually render a the uploaded file and show progress
-            content =
-                message.from === 'you' ? (
+        case 'file_recv': {
+            const fileState = svc('state').getReceivedFileState(message.id);
+            if (!fileState) {
+                return (
                     <>
                         <Timestamp
                             class="ConnectedMessage_ts"
-                            time={Date.now()}
+                            time={message.sent}
                         />{' '}
-                        Sending {message.fileName} (
-                        {message.length.toLocaleString()} bytes)...
-                    </>
-                ) : (
-                    <>
-                        <Timestamp
-                            class="ConnectedMessage_ts"
-                            time={Date.now()}
-                        />{' '}
-                        Receiving {message.fileName} (
-                        {message.length.toLocaleString()} bytes)...
+                        <strong class="ConnectedMessage_name">
+                            {svc('state').peerName}
+                        </strong>{' '}
+                        tried to send a file, but something went wrong.
                     </>
                 );
+            }
+            content = (
+                <>
+                    <Timestamp
+                        class="ConnectedMessage_ts"
+                        time={message.sent}
+                    />{' '}
+                    {calc(() => {
+                        const status = fileState.status.get();
+                        switch (status) {
+                            case 'requested':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').peerName}
+                                        </strong>{' '}
+                                        wants to send a file:{' '}
+                                        <FileToken
+                                            name={fileState.name}
+                                            mimeType={fileState.mimeType}
+                                            size={fileState.size}
+                                        />{' '}
+                                        <Buttons>
+                                            <Button
+                                                primary
+                                                size="sm"
+                                                on:click={() =>
+                                                    svc('state').acceptFile(
+                                                        fileState.id
+                                                    )
+                                                }
+                                            >
+                                                Accept
+                                            </Button>
+                                            <Button
+                                                primary
+                                                size="sm"
+                                                on:click={() =>
+                                                    svc('state').rejectFile(
+                                                        fileState.id
+                                                    )
+                                                }
+                                            >
+                                                Decline
+                                            </Button>
+                                        </Buttons>
+                                    </>
+                                );
+                            case 'rejected':
+                                return (
+                                    <>
+                                        You declined the file{' '}
+                                        <FileToken
+                                            name={fileState.name}
+                                            mimeType={fileState.mimeType}
+                                            size={fileState.size}
+                                        />{' '}
+                                        from{' '}
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').peerName}
+                                        </strong>
+                                        .
+                                    </>
+                                );
+                            case 'receiving':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').peerName}
+                                        </strong>{' '}
+                                        sending file{' '}
+                                        <FileToken
+                                            name={fileState.name}
+                                            mimeType={fileState.mimeType}
+                                            size={fileState.size}
+                                        />
+                                        <meter
+                                            min="0"
+                                            max="100"
+                                            value={calc(
+                                                () =>
+                                                    (100 *
+                                                        fileState.lastOffset.get()) /
+                                                    fileState.size
+                                            )}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            on:click={() =>
+                                                svc('state').rejectFile(
+                                                    fileState.id
+                                                )
+                                            }
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </>
+                                );
+                            case 'received':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').peerName}
+                                        </strong>{' '}
+                                        sent{' '}
+                                        {calc(() => {
+                                            const contents =
+                                                fileState.contents.get();
+                                            assert(
+                                                contents,
+                                                'Received file does not have contents!'
+                                            );
+                                            const blob = new Blob([contents], {
+                                                type: fileState.mimeType,
+                                            });
+                                            return (
+                                                <FilePreview
+                                                    blob={blob}
+                                                    name={fileState.name}
+                                                    mimeType={
+                                                        fileState.mimeType
+                                                    }
+                                                    size={fileState.size}
+                                                    showDownload
+                                                />
+                                            );
+                                        })}
+                                    </>
+                                );
+                            case 'cancelled':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').peerName}
+                                        </strong>{' '}
+                                        cancelled sending the file{' '}
+                                        <FileToken
+                                            name={fileState.name}
+                                            mimeType={fileState.mimeType}
+                                            size={fileState.size}
+                                        />
+                                        .
+                                    </>
+                                );
+                            case 'accepted':
+                                return (
+                                    <>
+                                        You accepted the file{' '}
+                                        <FileToken
+                                            name={fileState.name}
+                                            mimeType={fileState.mimeType}
+                                            size={fileState.size}
+                                        />{' '}
+                                        from{' '}
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').peerName}
+                                        </strong>
+                                        . Waiting for transfer to start...
+                                    </>
+                                );
+                            default:
+                                assertExhausted(status);
+                        }
+                    })}
+                </>
+            );
+            break;
+        }
+        case 'file_send': {
+            const fileState = svc('state').getSentFileState(message.id);
+            if (!fileState) {
+                return (
+                    <>
+                        <Timestamp
+                            class="ConnectedMessage_ts"
+                            time={message.sent}
+                        />{' '}
+                        <strong class="ConnectedMessage_name">
+                            {svc('state').localName}
+                        </strong>{' '}
+                        tried to send a file, but something went wrong.
+                    </>
+                );
+            }
+            content = (
+                <>
+                    <Timestamp
+                        class="ConnectedMessage_ts"
+                        time={message.sent}
+                    />{' '}
+                    {calc(() => {
+                        const status = fileState.status.get();
+                        switch (status) {
+                            case 'requested':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').localName}
+                                        </strong>{' '}
+                                        requesting file send…
+                                        <Button
+                                            size="sm"
+                                            on:click={() =>
+                                                svc('state').cancelFile(
+                                                    fileState.id
+                                                )
+                                            }
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </>
+                                );
+                            case 'rejected':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').localName}
+                                        </strong>{' '}
+                                        file send declined
+                                        <FileToken
+                                            name={fileState.file.name}
+                                            mimeType={fileState.file.type}
+                                            size={fileState.file.size}
+                                        />
+                                    </>
+                                );
+                            case 'sending':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').localName}
+                                        </strong>{' '}
+                                        sending file
+                                        <FileToken
+                                            name={fileState.file.name}
+                                            mimeType={fileState.file.type}
+                                            size={fileState.file.size}
+                                        />
+                                        <meter
+                                            min="0"
+                                            max="100"
+                                            value={calc(
+                                                () =>
+                                                    (100 *
+                                                        fileState.sendOffset.get()) /
+                                                    fileState.file.size
+                                            )}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            on:click={() =>
+                                                svc('state').cancelFile(
+                                                    fileState.id
+                                                )
+                                            }
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </>
+                                );
+                            case 'sent':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').localName}
+                                        </strong>{' '}
+                                        sent{' '}
+                                        <FilePreview
+                                            blob={fileState.file}
+                                            name={fileState.file.name}
+                                            mimeType={fileState.file.type}
+                                            size={fileState.file.size}
+                                        />
+                                    </>
+                                );
+                            case 'cancelled':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').localName}
+                                        </strong>{' '}
+                                        cancelled sending{' '}
+                                        <FileToken
+                                            name={fileState.file.name}
+                                            mimeType={fileState.file.type}
+                                            size={fileState.file.size}
+                                        />
+                                    </>
+                                );
+                            case 'accepted':
+                                return (
+                                    <>
+                                        <strong class="ConnectedMessage_name">
+                                            {svc('state').localName}
+                                        </strong>{' '}
+                                        sending file
+                                        <FileToken
+                                            name={fileState.file.name}
+                                            mimeType={fileState.file.type}
+                                            size={fileState.file.size}
+                                        />
+                                        …
+                                    </>
+                                );
+                            default:
+                                assertExhausted(status);
+                        }
+                    })}
+                </>
+            );
             break;
         }
         default:

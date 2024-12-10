@@ -156,6 +156,12 @@ export const ConnectedControls: Component<{
                                 setUserMedia={(userMedia) => {
                                     sharedUserMedia.set(userMedia);
                                 }}
+                                onShareFiles={(files) => {
+                                    for (const file of files) {
+                                        svc('state').sendFile(file);
+                                    }
+                                    shareDialogOpen.set(false);
+                                }}
                             />
                         )
                 )}

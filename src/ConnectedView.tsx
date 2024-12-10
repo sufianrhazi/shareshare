@@ -5,7 +5,7 @@ import { ConnectedControls } from './ConnectedControls';
 import { ConnectedMedia } from './ConnectedMedia';
 import { ConnectedMessages } from './ConnectedMessages';
 import { svc } from './svc';
-import type { LocalMessage, WireDataMessage } from './types';
+import type { LocalMessage, WireMessage } from './types';
 
 import './ConnectedView.css';
 
@@ -35,10 +35,7 @@ export const ConnectedView: Component = () => {
             isDraggingFile.set(false);
             e.preventDefault();
             for (const file of Array.from(e.dataTransfer.files)) {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                // TODO: send the file
-                console.log('TO SEND', file);
+                svc('state').sendFile(file);
             }
         }
     };
@@ -77,7 +74,7 @@ export const ConnectedView: Component = () => {
                         priorName,
                         name: newName,
                     };
-                    const wireMessage: WireDataMessage = {
+                    const wireMessage: WireMessage = {
                         type: 'name',
                         sent: Date.now(),
                         name: newName,
@@ -112,19 +109,7 @@ export const ConnectedView: Component = () => {
                     }
                 }}
                 onSendMessage={(msg) => {
-                    const localMessage: LocalMessage = {
-                        type: 'chat',
-                        sent: Date.now(),
-                        from: 'you',
-                        msg,
-                    };
-                    const wireMessage: WireDataMessage = {
-                        type: 'chat',
-                        sent: Date.now(),
-                        msg,
-                    };
-                    svc('state').chatMessages.push(localMessage);
-                    svc('peer').send(JSON.stringify(wireMessage));
+                    svc('state').sendMessage(msg);
                 }}
             />
         </div>
