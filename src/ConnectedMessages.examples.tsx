@@ -1,15 +1,29 @@
 import Gooey, { calc, field, mount } from '@srhazi/gooey';
 
+import { base64ToBytes } from './base64';
 import { ConnectedMessages } from './ConnectedMessages';
 import { Example } from './Example';
 import { svc } from './svc';
 import { _testReset } from './svc.reset';
+import json from './testFiles.json';
 import type { LocalMessage } from './types';
 
 import './ChatMain.scss';
 
 _testReset();
-const allStates: { messages: LocalMessage[]; label: string }[] = [
+const imageData = base64ToBytes(json.png);
+svc('state').sendFile(
+    new File([imageData], 'myimage.png', {
+        type: 'image/png',
+    })
+);
+
+const extraView = field<JSX.Node>(undefined);
+const allStates: {
+    messages: LocalMessage[];
+    label: string;
+    extra?: () => JSX.Node;
+}[] = [
     { messages: [], label: 'Empty messages' },
     {
         messages: [
@@ -32,6 +46,20 @@ const allStates: { messages: LocalMessage[]; label: string }[] = [
                 msg: 'And hello there!',
             },
         ],
+    },
+    {
+        label: 'File send message',
+        messages: [
+            {
+                type: 'file_send',
+                from: 'you',
+                sent: Date.now(),
+                id: 's:0',
+            },
+        ],
+        extra: () => {
+            return <p>Cool</p>;
+        },
     },
     {
         label: 'A few messages',
@@ -91,6 +119,7 @@ mount(
                                         ...targetState.messages
                                     );
                                     activeIndex.set(index);
+                                    extraView.set(targetState.extra?.());
                                 }
                             }}
                         />{' '}
@@ -101,6 +130,7 @@ mount(
         </Example>
         <Example title="Messages" style="height: 100px">
             <ConnectedMessages isConnected={isConnected} />
+            {extraView}
         </Example>
     </>
 );

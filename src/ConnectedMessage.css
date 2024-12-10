@@ -1,10 +1,16 @@
 .ConnectedMessage {
+    display: grid;
+    align-items: center;
+    grid-template-areas: "ts content";
+    grid-template-columns: 5rem 1fr;
     background-color: hsl(var(--user-hue) 40% 97%);
 }
 .ConnectedMessage_ts {
+    grid-area: ts;
     opacity: 0;
     transition: opacity 100ms;
     cursor: default;
+    height: 1rem;
 }
 .ConnectedMessage:hover .ConnectedMessage_ts {
     opacity: 1;
@@ -20,4 +26,7 @@
 }
 .ConnectedMessage_name {
     color: hsl(var(--user-hue) 80% 35%);
+}
+.ConnectedMessage_content {
+    grid-area: content;
 }

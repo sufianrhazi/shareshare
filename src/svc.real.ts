@@ -1,4 +1,5 @@
 import { AppState } from './AppState';
+import { FileServiceReal } from './FileService.real';
 import { RealPeer } from './Peer.real';
 import { register } from './svc';
 import * as time from './time.real';
@@ -22,11 +23,13 @@ export function init(): Promise<void> {
         appState.peerResponsePromise = makePromise<string>();
         return appState.peerResponsePromise.promise;
     });
-    const appState = new AppState();
+    const fileService = new FileServiceReal();
+    const appState = new AppState(fileService);
     appState.setPeer(peer);
     register({
         state: appState,
         time: time.makeReal(),
+        file: fileService,
         peer,
     });
     return Promise.resolve();

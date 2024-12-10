@@ -51,3 +51,9 @@
     padding: var(--size-sm) var(--size-md);
     border-radius: var(--size-md);
 }
+
+.Button-xs {
+    font-size: var(--font-xs);
+    padding: var(--size-xs) var(--size-md);
+    border-radius: var(--size-sm);
+}

@@ -5,7 +5,7 @@ import { classes } from './classes';
 
 import './Button.css';
 
-export type ButtonSize = 'sm' | 'md';
+export type ButtonSize = 'xs' | 'sm' | 'md';
 
 export const Button: Component<
     {
@@ -17,6 +17,7 @@ export const Button: Component<
         class={classes(className, 'Button', {
             'Button-primary': primary,
             'Button-sm': calc(() => dynGet(size) === 'sm'),
+            'Button-xs': calc(() => dynGet(size) === 'xs'),
         })}
         type="button"
         {...props}

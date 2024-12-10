@@ -3,6 +3,7 @@ import type { Collection, Field } from '@srhazi/gooey';
 
 import { base64ToBytes, bytesToBase64 } from './base64';
 import { DynamicMediaStreams } from './DynamicMediaStreams';
+import type { FileService, SentFileState } from './FileService';
 import type { PeerService } from './Peer';
 import {
     isWireChatMessage,
@@ -125,42 +126,6 @@ function getInitialState(): StateMachineState {
     return { type: 'start_host' };
 }
 
-export type SentFileStateStatus =
-    | 'requested'
-    | 'accepted'
-    | 'rejected'
-    | 'cancelled'
-    | 'sending'
-    | 'sent';
-
-export type SentFileState = {
-    id: string;
-    status: Field<SentFileStateStatus>;
-    ackOffset: Field<number>;
-    sendOffset: Field<number>;
-    file: File;
-    asyncIterator: AsyncGenerator<Uint8Array, void, unknown>;
-};
-
-export type ReceivedFileStateStatus =
-    | 'requested'
-    | 'accepted'
-    | 'rejected'
-    | 'cancelled'
-    | 'receiving'
-    | 'received';
-
-export type ReceivedFileState = {
-    id: string;
-    name: string;
-    mimeType: string;
-    size: number;
-    status: Field<ReceivedFileStateStatus>;
-    contents: Field<undefined | Uint8Array>;
-    lastOffset: Field<number>;
-    chunks: string[];
-};
-
 export class AppState implements Disposable {
     public peerResponsePromise: PromiseHandle<string>;
     public dynamicMediaStreams: DynamicMediaStreams;
@@ -174,11 +139,11 @@ export class AppState implements Disposable {
     private unsubscribeConnectionState?: () => void;
     private unsubscribeMessage?: () => void;
     private unsubscribeTrack?: () => void;
-    private sentFileToStateId: Map<File, string>;
-    private sentStateIdToFileState: Map<string, SentFileState>;
-    private receivedStateIdToFileState: Map<string, ReceivedFileState>;
+    private fileService: FileService;
+    private nextFileId: number;
 
-    constructor() {
+    constructor(fileService: FileService) {
+        this.fileService = fileService;
         // TODO: this is super awkward; the way the state and peer are coupled is not good
         this.peerResponsePromise = makePromise<string>();
 
@@ -193,21 +158,19 @@ export class AppState implements Disposable {
         this.unsubscribeConnectionState = undefined;
         this.unsubscribeMessage = undefined;
         this.unsubscribeTrack = undefined;
-        this.sentFileToStateId = new Map();
-        this.sentStateIdToFileState = new Map();
-        this.receivedStateIdToFileState = new Map();
+        this.nextFileId = 0;
     }
 
     getReceivedFileState(id: string) {
-        return this.receivedStateIdToFileState.get(id);
+        return this.fileService.getReceivedFileState(id);
     }
 
     getSentFileState(id: string) {
-        return this.sentStateIdToFileState.get(id);
+        return this.fileService.getSentFileState(id);
     }
 
     acceptFile(id: string) {
-        const receivedFileState = this.receivedStateIdToFileState.get(id);
+        const receivedFileState = this.fileService.getReceivedFileState(id);
         assert(receivedFileState, 'Unable to accept file that does not exist');
         const status = receivedFileState.status.get();
         assert(
@@ -228,7 +191,7 @@ export class AppState implements Disposable {
     }
 
     rejectFile(id: string) {
-        const receivedFileState = this.receivedStateIdToFileState.get(id);
+        const receivedFileState = this.fileService.getReceivedFileState(id);
         assert(receivedFileState, 'Unable to reject file that does not exist');
         const status = receivedFileState.status.get();
         assert(
@@ -249,7 +212,7 @@ export class AppState implements Disposable {
     }
 
     cancelFile(id: string) {
-        const sentFileState = this.sentStateIdToFileState.get(id);
+        const sentFileState = this.fileService.getSentFileState(id);
         assert(sentFileState, 'Unable to reject file that does not exist');
         const status = sentFileState.status.get();
         assert(
@@ -298,8 +261,7 @@ export class AppState implements Disposable {
         const asyncIterator = makeChunkedStreamIterator(stream);
         assert(this.peer, 'Cannot send file without peer');
         const when = Date.now();
-        const id = JSON.stringify({ name: file.name, when: when });
-        this.sentFileToStateId.set(file, id);
+        const id = `s:${this.nextFileId++}`;
         const fileState: SentFileState = {
             id,
             status: field('requested'),
@@ -308,7 +270,7 @@ export class AppState implements Disposable {
             file,
             asyncIterator,
         };
-        this.sentStateIdToFileState.set(id, fileState);
+        this.fileService.setSentFileState(id, fileState);
         const localMessage: LocalMessage = {
             type: 'file_send',
             sent: when,
@@ -432,7 +394,7 @@ export class AppState implements Disposable {
                         msg: parsed.msg,
                     });
                 } else if (isWireSendFileRequest(parsed)) {
-                    this.receivedStateIdToFileState.set(parsed.id, {
+                    this.fileService.setReceivedFileState(parsed.id, {
                         id: parsed.id,
                         name: parsed.name,
                         mimeType: parsed.mimeType,
@@ -449,7 +411,7 @@ export class AppState implements Disposable {
                         id: parsed.id,
                     });
                 } else if (isWireSendFileAccept(parsed)) {
-                    const sentFileState = this.sentStateIdToFileState.get(
+                    const sentFileState = this.fileService.getSentFileState(
                         parsed.id
                     );
                     assert(
@@ -464,7 +426,7 @@ export class AppState implements Disposable {
                         );
                     });
                 } else if (isWireSendFileReject(parsed)) {
-                    const sentFileState = this.sentStateIdToFileState.get(
+                    const sentFileState = this.fileService.getSentFileState(
                         parsed.id
                     );
                     assert(
@@ -474,7 +436,7 @@ export class AppState implements Disposable {
                     sentFileState.status.set('rejected');
                 } else if (isWireSendFileCancel(parsed)) {
                     const receivedFileState =
-                        this.receivedStateIdToFileState.get(parsed.id);
+                        this.fileService.getReceivedFileState(parsed.id);
                     assert(
                         receivedFileState,
                         'Got a file cancel for a received file that does not exist'
@@ -482,7 +444,7 @@ export class AppState implements Disposable {
                     receivedFileState.status.set('cancelled');
                 } else if (isWireSendFileChunk(parsed)) {
                     const receivedFileState =
-                        this.receivedStateIdToFileState.get(parsed.id);
+                        this.fileService.getReceivedFileState(parsed.id);
                     assert(
                         receivedFileState,
                         'Got a file chunk for a received file that does not exist'
@@ -529,7 +491,7 @@ export class AppState implements Disposable {
                         receivedFileState.contents.set(contents);
                     }
                 } else if (isWireSendFileChunkAck(parsed)) {
-                    const sentFileState = this.sentStateIdToFileState.get(
+                    const sentFileState = this.fileService.getSentFileState(
                         parsed.id
                     );
                     assert(
