@@ -35,7 +35,6 @@ export const MediaPicker: Component<{
                         <div>
                             <label>
                                 <input
-                                    required
                                     ref={inputRef}
                                     name="files"
                                     type="file"
