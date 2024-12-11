@@ -1,56 +1,92 @@
+WHAT IS THIS
+
+    Sending things between computers should be easy and cheap, with minimal operational overhead.
+
+    * Most recent build is hosted on `https://shareshare.abstract.properties`
+    * No service to coordinate the initial handshake is provided (this requires the invited user needs to send a
+      response payload back to the inviting user)
+    * A STUN service is provided at `stun:abstract.properties:3478`, currently subject to change/disappear at any time.
+    * A TURN service is not provided, which means some devices may not be able to connect to each other.
+
+    Ideally this'll be a free service with pay-to-support STUN/TURN hosting & bandwidth costs.
+
+
+WHAT COULD IT BE
+
+    [✓] 2 peers can connect
+    [✓] Send/receive text chat messages
+    [✓] Send/receive files
+    [✓] Stream video/audio devices
+    [ ] Share screen
+    [ ] Reduce file transfer network round trips
+    [ ] Improve design, visual language, look & feel
+    [ ] Video effects
+    [ ] Simple service to coordinate initial handshake
+    [ ] Option to use a TURN relay as a fallback
+
+    Potential future directions:
+    [ ] Embedd an NFS server (would require native client wrapper) to allow for sharing filesystems 
+    [ ] N peers can connect
+    [ ] Shared multiplayer drawing/diagram canvas
+    [ ] Shared multiplayer rich text editor
+    [ ] Shared multiplayer repl/programming environment
+
+
 ARCHITECTURE
 
-    Last updated 2024-11-26 (8f7a32bb41e052c552d53f1a0f5f027af38a9008)
+    Note: this is incomplete
+    Last updated: 2024-11-26
 
 
-CLASS AppState
+    CLASS AppState
 
-    The AppState class holds the global application state:
-    - .state: Field<StateMachineState> - the main state machine for connecting
-    - .dispatch(action) - trigger a transition in the state machine 
-    - .activeView: Calculation<StateMachineState['type']> - each major state machine state corresponds to a view; this calculation shows the active view
+        The AppState class holds the global application state:
+        - .state: Field<StateMachineState> - the main state machine for connecting
+        - .dispatch(action) - trigger a transition in the state machine 
+        - .activeView: Calculation<StateMachineState['type']> - each major state machine state corresponds to a view; this calculation shows the active view
 
-    During initialization, AppState gains a .peer (PeerService) member, which represents a WebRTC peer.
-
-
-INTERFACE PeerService
-
-    PeerService instances represent a single WebRTC peer.
-
-    A real PeerService instance is used in the application, and deals with the real network.
-
-    A fake PeerService instance is used in tests, and deals with a simulated network.
-
-    It takes a callback which is called to send a token and gather a response back from the intended peer.
-    - To create an invite, call .start()
-    - To join an invite, call .accept(invite)
-
-    Once connected, a single (encrypted, by default due to WebRTC internals) data channel is established.
-    - To listen for messages on this data channel, call .onMessage((message) => ...)
-    - To send a message on this data channel, call .send(message)
-
-    In practice, the data channel is limited:
-    - Messages should be less than 16k
-    - There is not a mechanism to receive acknowledges the messages have been received by the remote side
-
-    Media streams can be shared over the WebRTC session:
-    - To share a MediaStreamTrack and MediaStream, call .addTrack(track, mediaStream)
-    - To unshare media, call .removeTrack(sender) where sender is the return value of .addTrack(track, mediaStream)
-    - To listen for tracks added by the remote peer, call .onTrack
-
-    Media stream sharing is complex when detecting changes to remote tracks. This is managed by the DynamicMediaStreams
-    class, which lives on AppState.dynamicMediaStreams
-
-    Similarly, the raw message channel should not be used directly due to limitations. Currently it is. In the future, a
-    MessageManager class will live on AppState.messageManager to be able to send arbitrary-sized messages and be aware
-    of their progress and receipt (via acknowledgement messages).
+        During initialization, AppState gains a .peer (PeerService) member, which represents a WebRTC peer.
 
 
-CLASSES DynamicMediaStreams / DynamicMediaStream / DynamicMediaStreamTrack
+    INTERFACE PeerService
 
-    A DynamicMediaStreams instance is responsible for managing both local _and_ remote media streams.
+        PeerService instances represent a single WebRTC peer.
 
-    To access the streams, use .dynamicMediaStreams: Collection<DynamicMediaStream>
-    To add/remove streams, use .addStream() and .removeStream()
+        A real PeerService instance is used in the application, and deals with the real network.
 
-    Note: different parameters are used for .addStream and .removeStream
+        A fake PeerService instance is used in tests, and deals with a simulated network.
+
+        It takes a callback which is called to send a token and gather a response back from the intended peer.
+        - To create an invite, call .start()
+        - To join an invite, call .accept(invite)
+
+        Once connected, a single (encrypted, by default due to WebRTC internals) data channel is established.
+        - To listen for messages on this data channel, call .onMessage((message) => ...)
+        - To send a message on this data channel, call .send(message)
+
+        In practice, the data channel is limited:
+        - Messages should be less than 16k
+        - There is not a mechanism to receive acknowledges the messages have been received by the remote side
+
+        Media streams can be shared over the WebRTC session:
+        - To share a MediaStreamTrack and MediaStream, call .addTrack(track, mediaStream)
+        - To unshare media, call .removeTrack(sender) where sender is the return value of .addTrack(track, mediaStream)
+        - To listen for tracks added by the remote peer, call .onTrack
+
+        Media stream sharing is complex when detecting changes to remote tracks. This is managed by the DynamicMediaStreams
+        class, which lives on AppState.dynamicMediaStreams
+
+        Similarly, the raw message channel should not be used directly due to limitations. Currently it is. In the future, a
+        MessageManager class will live on AppState.messageManager to be able to send arbitrary-sized messages and be aware
+        of their progress and receipt (via acknowledgement messages).
+
+
+    CLASSES DynamicMediaStreams / DynamicMediaStream / DynamicMediaStreamTrack
+
+        A DynamicMediaStreams instance is responsible for managing both local _and_ remote media streams.
+
+        To access the streams, use .dynamicMediaStreams: Collection<DynamicMediaStream>
+        To add/remove streams, use .addStream() and .removeStream()
+
+        Note: different parameters are used for .addStream and .removeStream
+

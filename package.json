@@ -2,7 +2,7 @@
     "name": "shareshare",
     "author": "Sufian Rhazi <sufian@gmail.com>",
     "version": "0.0.0",
-    "license": "UNLICENSED",
+    "license": "BSD-3-Clause",
     "type": "module",
     "repository": {
         "type": "git",
